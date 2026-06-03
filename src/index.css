@@ -1,0 +1,1031 @@
+:root {
+  /* ライトテーマ カラー定義 */
+  --bg-main: #f1f5f9; /* 明るいグレーブルー */
+  --bg-card: #ffffff; /* 純白カード */
+  --bg-card-hover: #f8fafc;
+  --bg-input: #f8fafc;
+  --border-color: #e2e8f0; /* スレートグレー */
+  --border-hover: #cbd5e1;
+  
+  --accent-primary: #4f46e5; /* Indigo-600 */
+  --accent-secondary: #7c3aed; /* Violet-600 */
+  --accent-success: #10b981; /* Emerald-500 */
+  --accent-danger: #ef4444; /* Red-500 */
+  --accent-warning: #f59e0b; /* Amber-500 */
+  
+  --text-primary: #0f172a; /* Slate-900 */
+  --text-secondary: #475569; /* Slate-600 */
+  --text-muted: #94a3b8; /* Slate-400 */
+  
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-glow: 0 0 15px rgba(79, 70, 229, 0.15);
+  --shadow-red-glow: 0 0 10px rgba(239, 68, 68, 0.25);
+  
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-main);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.03) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* スクロールバーのカスタマイズ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* ヘッダー */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  color: var(--accent-primary);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ボタン */
+.btn {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.btn:hover {
+  background: #f8fafc;
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--accent-danger);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--accent-danger);
+  color: var(--accent-danger);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* トグルスイッチ用スタイル */
+.toggle-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.toggle-input {
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}
+
+/* メインコンテンツレイアウト */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ダッシュボード（保存済みリスト） */
+.dashboard {
+  max-width: 800px;
+  width: 90%;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.dashboard-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.tournament-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.tournament-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  box-shadow: var(--shadow-lg);
+}
+
+.tournament-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-3px);
+}
+
+.tournament-card-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+}
+
+.tournament-card-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.delete-card-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.delete-card-btn:hover {
+  color: var(--accent-danger);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: 16px;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-lg);
+}
+
+.empty-state-icon {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* セットアップ画面 */
+.setup-container {
+  max-width: 480px;
+  width: 90%;
+  margin: 80px auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.setup-title {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  text-align: center;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.team-count-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-count-slider {
+  flex-grow: 1;
+  accent-color: var(--accent-primary);
+}
+
+.team-count-badge {
+  background: rgba(79, 70, 229, 0.05);
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  min-width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-box {
+  background: rgba(79, 70, 229, 0.03);
+  border-left: 4px solid var(--accent-primary);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.info-box-highlight {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.bracket-wrapper {
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* トーナメントビューポート（スクロール・パン用） */
+.bracket-viewport {
+  flex-grow: 1;
+  overflow: auto;
+  position: relative;
+  touch-action: none;
+  background-color: #fafbfe;
+  background-image: 
+    radial-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 0),
+    radial-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+  cursor: grab;
+}
+
+.bracket-viewport:active {
+  cursor: grabbing;
+}
+
+.bracket-container {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.bracket-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* SVG黄色の塗りつぶし領域 */
+.bracket-fill-area {
+  fill: #fefce8; /* 明るいライトイエロー */
+  stroke: none;
+  cursor: pointer;
+  transition: fill 0.2s ease;
+  pointer-events: auto;
+}
+
+.bracket-fill-area:hover {
+  fill: #fef08a; /* ホバーで濃い黄色に発光 */
+}
+
+/* SVGコネクタ線 */
+.connector-line {
+  fill: none;
+  stroke: #cbd5e1; /* 通常時は見やすいスレートグレー */
+  stroke-width: 2.2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.25s, stroke-width 0.25s, filter 0.25s;
+}
+
+.connector-line.active {
+  stroke: var(--accent-danger); /* 勝利決定時は赤線 */
+  stroke-width: 3.5px;
+  filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.4));
+}
+
+/* 得点テキスト（SVG） */
+.score-text {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--text-secondary);
+  text-anchor: middle;
+  cursor: pointer;
+  user-select: none;
+  transition: fill 0.2s, font-size 0.2s;
+  pointer-events: auto;
+}
+
+.score-text:hover {
+  fill: var(--accent-primary);
+  font-size: 15px;
+}
+
+.score-text.winner {
+  fill: var(--text-primary);
+  font-weight: 800;
+}
+
+/* コラムヘッダー（ラウンド名ラベル） */
+.round-label-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.round-label {
+  position: absolute;
+  top: 40px;
+  background: #1e293b; /* 丸角の黒バッジ */
+  color: #ffffff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15);
+  letter-spacing: 0.5px;
+}
+
+/* 得点登録用フローティングアイコンボタン */
+.score-edit-trigger {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  transition: all 0.2s ease;
+  z-index: 10;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.score-edit-trigger:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.25);
+}
+
+/* 左端チームリスト */
+.team-row-container {
+  position: absolute;
+  left: 10px;
+  width: 210px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateY(-50%);
+  z-index: 5;
+}
+
+.team-row-number {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 18px;
+  text-align: right;
+}
+
+.team-row-card {
+  flex-grow: 1;
+  height: 38px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  transition: all 0.2s;
+  pointer-events: auto;
+}
+
+.team-row-card:hover {
+  border-color: var(--accent-primary);
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.1);
+}
+
+.team-row-card.swap-source {
+  background: rgba(139, 92, 246, 0.1) !important;
+  border-color: var(--accent-secondary) !important;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.15) !important;
+  color: var(--accent-secondary);
+}
+
+.team-row-card.swap-target-highlight {
+  animation: pulse-border 1.5s infinite;
+  border-color: var(--accent-primary) !important;
+  background: rgba(79, 70, 229, 0.05) !important;
+}
+
+.team-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-grow: 1;
+}
+
+/* アクションボタン */
+.slot-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.team-row-card:hover .slot-actions {
+  opacity: 0.8;
+}
+
+.slot-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.slot-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--accent-primary);
+}
+
+/* インライン入力 */
+.inline-edit-input {
+  background: #ffffff;
+  border: 1px solid var(--accent-primary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 4px;
+  width: 90%;
+  outline: none;
+}
+
+/* 優勝 / 3位カード */
+.champion-card {
+  position: absolute;
+  width: 130px;
+  height: 64px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(251, 191, 36, 0.02));
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  text-align: center;
+  padding: 8px;
+}
+
+.champion-card-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.champion-card-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.champion-card-name.empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* 3位カード特有の銅メダルデザイン */
+.bronze-card {
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.05), rgba(217, 119, 6, 0.02));
+  border-color: #b45309; /* 銅色（アンバーブラウン） */
+  box-shadow: 0 4px 10px rgba(180, 83, 9, 0.15);
+}
+.bronze-card-label {
+  color: #b45309;
+}
+
+/* 浮遊式スコア編集ポップオーバー */
+.score-popover {
+  position: absolute;
+  width: 250px;
+  background: #ffffff;
+  border: 1px solid var(--accent-primary);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg), 0 4px 20px rgba(0,0,0,0.08);
+  padding: 16px;
+  z-index: 100;
+  transform: translate(-50%, 15px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popover-fade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+@keyframes popover-fade {
+  from { opacity: 0; transform: translate(-50%, 5px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 15px) scale(1); }
+}
+
+/* ポップオーバーの矢印 */
+.score-popover::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-left: 1px solid var(--accent-primary);
+  border-top: 1px solid var(--accent-primary);
+}
+
+.score-popover-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
+}
+
+.score-popover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.score-popover-team {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-grow: 1;
+  max-width: 140px;
+}
+
+.score-popover-input {
+  width: 55px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.score-popover-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.score-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.score-popover-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.score-popover-btn:hover {
+  background: #f8fafc;
+  color: var(--text-primary);
+}
+
+.score-popover-btn-primary {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border: none;
+}
+
+.score-popover-btn-primary:hover {
+  background: #4338ca;
+  color: #ffffff;
+}
+
+/* コントロールオーバーレイ */
+.controls-overlay {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  box-shadow: var(--shadow-lg);
+}
+
+.controls-overlay .btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.controls-overlay .btn-icon:hover {
+  background: rgba(0,0,0,0.04);
+  color: var(--text-primary);
+}
+
+/* タイトル直接編集 */
+.tournament-title-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 2px 0;
+  outline: none;
+  transition: border-color 0.2s;
+  max-width: 300px;
+}
+
+.tournament-title-input:focus {
+  border-color: var(--accent-primary);
+}
+
+/* 一括編集モーダル */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 440px;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-content h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.modal-textarea {
+  width: 100%;
+  height: 200px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: none;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.modal-textarea:focus {
+  border-color: var(--accent-primary);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* スマホ向けレスポンシブ対応 */
+@media (max-width: 768px) {
+  .header {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .header-title-container {
+    justify-content: center;
+  }
+  .header-actions {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  .header h1 {
+    font-size: 1.2rem;
+  }
+  .btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+  .dashboard {
+    padding: 16px;
+    margin: 16px auto;
+    width: 95%;
+  }
+  .setup-container {
+    padding: 20px 16px;
+    margin: 16px auto;
+    width: 95%;
+  }
+  .controls-overlay {
+    bottom: 16px;
+    right: 16px;
+    padding: 6px;
+    font-size: 0.7rem;
+  }
+}
+
+/* スワップ配置先指定用フローティングボタン */
+.swap-target-trigger {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: var(--accent-secondary);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.4);
+  transition: all 0.2s ease;
+  z-index: 20;
+  transform: translate(-50%, -50%);
+  animation: swap-pulse 1.5s infinite ease-in-out;
+  pointer-events: auto;
+}
+
+.swap-target-trigger:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  background: #6d28d9;
+}
+
+@keyframes swap-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+}
+
+/* 対戦位置変更用フローティングアイコンボタン */
+.match-swap-trigger {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  transition: all 0.2s ease;
+  z-index: 10;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.match-swap-trigger:hover {
+  background: var(--accent-secondary);
+  color: #ffffff;
+  border-color: var(--accent-secondary);
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 4px 8px rgba(124, 58, 237, 0.25);
+}
