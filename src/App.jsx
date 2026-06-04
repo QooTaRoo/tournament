@@ -35,6 +35,7 @@ function App() {
   const touchStartDistRef = useRef(null);
   const touchStartZoomRef = useRef(1);
   const isPinchingRef = useRef(false);
+  const touchStartContentCenterRef = useRef({ x: 0, y: 0 });
 
   // 編集・スワップ用ステート
   const [editingLeafIndex, setEditingLeafIndex] = useState(null);
@@ -382,6 +383,15 @@ function App() {
       );
       touchStartDistRef.current = dist;
       touchStartZoomRef.current = zoom;
+
+      const rect = viewportRef.current.getBoundingClientRect();
+      const clientX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      const clientY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+
+      touchStartContentCenterRef.current = {
+        x: (viewportRef.current.scrollLeft + clientX) / zoom,
+        y: (viewportRef.current.scrollTop + clientY) / zoom
+      };
       return;
     }
 
@@ -412,8 +422,18 @@ function App() {
         e.touches[0].clientY - e.touches[1].clientY
       );
       const factor = dist / touchStartDistRef.current;
-      const newZoom = touchStartZoomRef.current * factor;
-      setZoom(Math.max(0.4, Math.min(1.5, newZoom)));
+      const newZoom = Math.max(0.4, Math.min(1.5, touchStartZoomRef.current * factor));
+      
+      const rect = viewportRef.current.getBoundingClientRect();
+      const clientX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      const clientY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+      
+      const newScrollLeft = touchStartContentCenterRef.current.x * newZoom - clientX;
+      const newScrollTop = touchStartContentCenterRef.current.y * newZoom - clientY;
+      
+      setZoom(newZoom);
+      viewportRef.current.scrollLeft = newScrollLeft;
+      viewportRef.current.scrollTop = newScrollTop;
       return;
     }
 
