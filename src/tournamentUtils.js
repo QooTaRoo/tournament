@@ -10,6 +10,41 @@ export function getBracketSize(teamCount) {
 }
 
 /**
+ * 指定サイズのビット反転順のインデックス配列を生成します。
+ */
+export function getBitReversalPermutation(size) {
+  const result = [];
+  const bits = Math.log2(size);
+  for (let i = 0; i < size; i++) {
+    let rev = 0;
+    for (let b = 0; b < bits; b++) {
+      if ((i & (1 << b)) !== 0) {
+        rev |= (1 << (bits - 1 - b));
+      }
+    }
+    result.push(rev);
+  }
+  return result;
+}
+
+/**
+ * 1回戦マッチ M 個に対する、標準的なバイ配置（シード優先順）のインデックスリストを返します。
+ */
+export function getByePriorityList(M) {
+  if (M === 1) return [0];
+
+  const halfSize = M / 2;
+  const br = getBitReversalPermutation(halfSize);
+  const result = [];
+  for (let i = 0; i < halfSize; i++) {
+    const val = br[i] * 2;
+    result.push(val);
+    result.push(M - 1 - val);
+  }
+  return result;
+}
+
+/**
  * P/2 個の1回戦マッチに対して、B 個のシード（バイ）枠を均等に配分するインデックスを返します。
  */
 export function getByeIndices(teamCount, bracketSize) {
@@ -18,22 +53,7 @@ export function getByeIndices(teamCount, bracketSize) {
   const byeIndices = new Set();
   if (B <= 0) return byeIndices;
 
-  // 中央インデックス M/2 付近から、外側へ向けて優先的にバイ（シード）を配置します。
-  // 優先順： M/2 - 1, M/2, M/2 - 2, M/2 + 1, M/2 - 3, M/2 + 2, ...
-  const priority = [];
-  let left = Math.floor(M / 2) - 1;
-  let right = Math.floor(M / 2);
-  while (left >= 0 || right < M) {
-    if (left >= 0) {
-      priority.push(left);
-      left--;
-    }
-    if (right < M) {
-      priority.push(right);
-      right++;
-    }
-  }
-
+  const priority = getByePriorityList(M);
   // 必要な B 個のバイを優先順に取り出します
   for (let i = 0; i < B && i < priority.length; i++) {
     byeIndices.add(priority[i]);
@@ -56,16 +76,11 @@ export function createTournament(name, teamCount, hasThirdPlace = false) {
 
   for (let m = 0; m < M; m++) {
     if (byeIndices.has(m)) {
-      // シードチームは「外側」に割り当て、内側（中心寄り）を null（バイ）にします。
-      // 上半分（m < M/2）なら 2m が外側、2m+1 が内側。
-      // 下半分（m >= M/2）なら 2m+1 が外側、2m が内側。
-      if (m < M / 2) {
-        teams[2 * m] = `Team ${currentTeamNum++}`;
-        teams[2 * m + 1] = null;
-      } else {
-        teams[2 * m] = null;
-        teams[2 * m + 1] = `Team ${currentTeamNum++}`;
-      }
+      // シードマッチでは、チームは常に偶数インデックス（上）、バイは常に奇数インデックス（下）に配置します。
+      // これにより、2回戦の対戦相手（1回戦の勝者）が内側に位置し、
+      // シードチームが自動的にブロックの外側に位置することになります。
+      teams[2 * m] = `Team ${currentTeamNum++}`;
+      teams[2 * m + 1] = null;
     } else {
       teams[2 * m] = `Team ${currentTeamNum++}`;
       teams[2 * m + 1] = `Team ${currentTeamNum++}`;

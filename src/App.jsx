@@ -927,7 +927,6 @@ function App() {
                     const child1 = r > 0 ? currentTournament.rounds[r - 1][2 * m] : null;
                     const child1IsBye = child1 && (child1.p1 === null || child1.p2 === null);
                     const isTopActive = match.p1 !== null && (
-                      child1IsBye ||
                       (match.winner !== null && match.winner === match.p1) ||
                       (r > 0 && !child1IsBye && child1 && child1.winner === match.p1)
                     );
@@ -936,7 +935,6 @@ function App() {
                     const child2 = r > 0 ? currentTournament.rounds[r - 1][2 * m + 1] : null;
                     const child2IsBye = child2 && (child2.p1 === null || child2.p2 === null);
                     const isBottomActive = match.p2 !== null && (
-                      child2IsBye ||
                       (match.winner !== null && match.winner === match.p2) ||
                       (r > 0 && !child2IsBye && child2 && child2.winner === match.p2)
                     );
