@@ -70,7 +70,7 @@ assert(rounds[2][0].p2 === 'Team 4', 'Team 4 propagated to finals');
 rounds = setMatchScores(rounds, 0, 3, 1, 2);
 assert(rounds[0][3].winner === 'Team 5', 'Winner changed to Team 5');
 assert(rounds[1][1].p2 === 'Team 5', 'Team 5 propagated to next round');
-assert(rounds[1][1].score1 === 0 && rounds[1][1].score2 === 0, 'Scores reset in next round because participants changed but are still both present');
+assert(rounds[1][1].score1 === null && rounds[1][1].score2 === null, 'Scores reset in next round');
 assert(rounds[1][1].winner === null, 'Winner reset in next round');
 assert(rounds[2][0].p2 === null, 'Finals input reset');
 

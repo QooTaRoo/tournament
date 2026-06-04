@@ -32,6 +32,9 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const viewportRef = useRef(null);
+  const touchStartDistRef = useRef(null);
+  const touchStartZoomRef = useRef(1);
+  const isPinchingRef = useRef(false);
 
   // 編集・スワップ用ステート
   const [editingLeafIndex, setEditingLeafIndex] = useState(null);
@@ -169,14 +172,14 @@ function App() {
       const tp = currentTournament.thirdPlaceMatch;
       if (!tp || tp.p1 === null || tp.p2 === null) return;
       setActiveScoreEdit({ roundIndex: -1, matchIndex: -1, x, y, isThirdPlace: true });
-      setPopoverScore1(tp.score1 !== null ? String(tp.score1) : '0');
-      setPopoverScore2(tp.score2 !== null ? String(tp.score2) : '0');
+      setPopoverScore1(tp.score1 !== null ? String(tp.score1) : '');
+      setPopoverScore2(tp.score2 !== null ? String(tp.score2) : '');
     } else {
       const match = currentTournament.rounds[roundIndex][matchIndex];
       if (match.p1 === null || match.p2 === null) return;
       setActiveScoreEdit({ roundIndex, matchIndex, x, y, isThirdPlace: false });
-      setPopoverScore1(match.score1 !== null ? String(match.score1) : '0');
-      setPopoverScore2(match.score2 !== null ? String(match.score2) : '0');
+      setPopoverScore1(match.score1 !== null ? String(match.score1) : '');
+      setPopoverScore2(match.score2 !== null ? String(match.score2) : '');
     }
   };
 
@@ -368,9 +371,22 @@ function App() {
     setIsDragging(false);
   };
 
-  // タッチによるパン（スマホ対応）
+  // タッチによるパンおよびピンチズーム（スマホ対応）
   const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      isPinchingRef.current = true;
+      setIsDragging(false);
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartDistRef.current = dist;
+      touchStartZoomRef.current = zoom;
+      return;
+    }
+
     if (e.touches.length > 1) return;
+    isPinchingRef.current = false;
     const touch = e.touches[0];
     if (
       touch.target.closest('.team-row-card') || 
@@ -389,7 +405,19 @@ function App() {
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging) return;
+    if (e.touches.length === 2 && isPinchingRef.current && touchStartDistRef.current) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / touchStartDistRef.current;
+      const newZoom = touchStartZoomRef.current * factor;
+      setZoom(Math.max(0.4, Math.min(1.5, newZoom)));
+      return;
+    }
+
+    if (!isDragging || isPinchingRef.current) return;
     if (e.touches.length > 1) return;
     const touch = e.touches[0];
     const x = touch.pageX - viewportRef.current.offsetLeft;
@@ -400,9 +428,50 @@ function App() {
     viewportRef.current.scrollTop = dragStart.scrollTop - walkY;
   };
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
+  const handleTouchEnd = (e) => {
+    if (e.touches.length < 2) {
+      isPinchingRef.current = false;
+      touchStartDistRef.current = null;
+    }
+    if (e.touches.length === 0) {
+      setIsDragging(false);
+    }
   };
+
+  // タッチハンドラーの最新参照を保持するRef
+  const touchStartRef = useRef(handleTouchStart);
+  const touchMoveRef = useRef(handleTouchMove);
+  const touchEndRef = useRef(handleTouchEnd);
+
+  useEffect(() => {
+    touchStartRef.current = handleTouchStart;
+    touchMoveRef.current = handleTouchMove;
+    touchEndRef.current = handleTouchEnd;
+  });
+
+  const viewportRefCallback = React.useCallback((node) => {
+    if (node) {
+      const onTouchStart = (e) => touchStartRef.current(e);
+      const onTouchMove = (e) => touchMoveRef.current(e);
+      const onTouchEnd = (e) => touchEndRef.current(e);
+
+      node.addEventListener('touchstart', onTouchStart, { passive: true });
+      node.addEventListener('touchmove', onTouchMove, { passive: false });
+      node.addEventListener('touchend', onTouchEnd, { passive: true });
+
+      node._touchCleanups = () => {
+        node.removeEventListener('touchstart', onTouchStart);
+        node.removeEventListener('touchmove', onTouchMove);
+        node.removeEventListener('touchend', onTouchEnd);
+      };
+      viewportRef.current = node;
+    } else {
+      if (viewportRef.current && viewportRef.current._touchCleanups) {
+        viewportRef.current._touchCleanups();
+      }
+      viewportRef.current = null;
+    }
+  }, []);
 
   // 全体を画面に収める
   const handleFitToPage = () => {
@@ -662,14 +731,11 @@ function App() {
 
             <div 
               className="bracket-viewport" 
-              ref={viewportRef}
+              ref={viewportRefCallback}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
             >
 
             <div 

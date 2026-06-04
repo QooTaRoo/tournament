@@ -61,8 +61,8 @@ export function createTournament(name, teamCount, hasThirdPlace = false) {
       id: `r0-m${m}`,
       p1,
       p2,
-      score1: isReady ? 0 : null,
-      score2: isReady ? 0 : null,
+      score1: null,
+      score2: null,
       winner
     });
   }
@@ -160,19 +160,9 @@ function propagateWinner(rounds, roundIndex, matchIndex) {
 
   if (oldParticipant !== newParticipant) {
     nextMatch.winner = null;
-    if (nextMatch.p1 === null || nextMatch.p2 === null) {
-      nextMatch.score1 = null;
-      nextMatch.score2 = null;
-    } else {
-      nextMatch.score1 = 0;
-      nextMatch.score2 = 0;
-    }
+    nextMatch.score1 = null;
+    nextMatch.score2 = null;
     propagateWinner(rounds, nextRoundIndex, nextMatchIndex);
-  } else {
-    if (nextMatch.p1 !== null && nextMatch.p2 !== null) {
-      if (nextMatch.score1 === null) nextMatch.score1 = 0;
-      if (nextMatch.score2 === null) nextMatch.score2 = 0;
-    }
   }
 }
 
@@ -203,31 +193,17 @@ export function updateThirdPlaceMatch(tournament) {
   const changed2 = current.p2 !== loser2;
 
   if (changed1 || changed2) {
-    const isReady = loser1 !== null && loser2 !== null;
     return {
       ...tournament,
       thirdPlaceMatch: {
         ...current,
         p1: loser1,
         p2: loser2,
-        score1: isReady ? 0 : null,
-        score2: isReady ? 0 : null,
+        score1: null,
+        score2: null,
         winner: null
       }
     };
-  }
-
-  if (current.p1 !== null && current.p2 !== null) {
-    if (current.score1 === null || current.score2 === null) {
-      return {
-        ...tournament,
-        thirdPlaceMatch: {
-          ...current,
-          score1: current.score1 === null ? 0 : current.score1,
-          score2: current.score2 === null ? 0 : current.score2
-        }
-      };
-    }
   }
 
   return tournament;
@@ -339,19 +315,19 @@ export function swapInitialSlots(tournament, idx1, idx2) {
     
     const oldMatch = tournament.rounds[0][m];
     let winner = null;
-    let score1 = (p1 !== null && p2 !== null) ? 0 : null;
-    let score2 = (p1 !== null && p2 !== null) ? 0 : null;
+    let score1 = null;
+    let score2 = null;
 
     if (p1 === null || p2 === null) {
       winner = p1 || p2;
     } else if (oldMatch) {
       if (oldMatch.p1 === p1 && oldMatch.p2 === p2) {
-        score1 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
-        score2 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
+        score1 = oldMatch.score1;
+        score2 = oldMatch.score2;
         winner = oldMatch.winner;
       } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
-        score1 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
-        score2 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
+        score1 = oldMatch.score2;
+        score2 = oldMatch.score1;
         if (oldMatch.winner) {
           winner = oldMatch.winner;
         }
@@ -380,17 +356,17 @@ export function swapInitialSlots(tournament, idx1, idx2) {
 
       const oldMatch = tournament.rounds[r][m];
       let winner = null;
-      let score1 = (p1 !== null && p2 !== null) ? 0 : null;
-      let score2 = (p1 !== null && p2 !== null) ? 0 : null;
+      let score1 = null;
+      let score2 = null;
 
       if (oldMatch) {
         if (oldMatch.p1 === p1 && oldMatch.p2 === p2) {
-          score1 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
-          score2 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
+          score1 = oldMatch.score1;
+          score2 = oldMatch.score2;
           winner = oldMatch.winner;
         } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
-          score1 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
-          score2 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
+          score1 = oldMatch.score2;
+          score2 = oldMatch.score1;
           if (oldMatch.winner) {
             winner = oldMatch.winner;
           }
@@ -553,19 +529,19 @@ export function swapInitialMatches(tournament, m1, m2) {
 
     const oldMatch = tournament.rounds[0][oldMatchSourceIdx];
     let winner = null;
-    let score1 = (p1 !== null && p2 !== null) ? 0 : null;
-    let score2 = (p1 !== null && p2 !== null) ? 0 : null;
+    let score1 = null;
+    let score2 = null;
 
     if (p1 === null || p2 === null) {
       winner = p1 || p2;
     } else if (oldMatch) {
       if (oldMatch.p1 === p1 && oldMatch.p2 === p2) {
-        score1 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
-        score2 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
+        score1 = oldMatch.score1;
+        score2 = oldMatch.score2;
         winner = oldMatch.winner;
       } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
-        score1 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
-        score2 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
+        score1 = oldMatch.score2;
+        score2 = oldMatch.score1;
         if (oldMatch.winner) {
           winner = oldMatch.winner;
         }
@@ -594,17 +570,17 @@ export function swapInitialMatches(tournament, m1, m2) {
 
       const oldMatch = tournament.rounds[r][m];
       let winner = null;
-      let score1 = (p1 !== null && p2 !== null) ? 0 : null;
-      let score2 = (p1 !== null && p2 !== null) ? 0 : null;
+      let score1 = null;
+      let score2 = null;
 
       if (oldMatch) {
         if (oldMatch.p1 === p1 && oldMatch.p2 === p2) {
-          score1 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
-          score2 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
+          score1 = oldMatch.score1;
+          score2 = oldMatch.score2;
           winner = oldMatch.winner;
         } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
-          score1 = oldMatch.score2 !== null ? oldMatch.score2 : 0;
-          score2 = oldMatch.score1 !== null ? oldMatch.score1 : 0;
+          score1 = oldMatch.score2;
+          score2 = oldMatch.score1;
           if (oldMatch.winner) {
             winner = oldMatch.winner;
           }
