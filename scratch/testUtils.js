@@ -103,4 +103,37 @@ let tRenamed = renameTeam(t5, 2, '最強チーム'); // Rename Team 2 (index 2)
 assert(tRenamed.teams[2] === '最強チーム', 'Team name in array is updated');
 assert(tRenamed.rounds[0][1].p1 === '最強チーム', 'Team name in R0-M1 updated');
 
+// 9. Symmetric Layout (double-sided) coordinates tests
+console.log('Testing symmetric coordinates calculation...');
+const tSymmetric = createTournament('Symmetric Cup', 20, false, 'double-sided');
+const coordsSym = calculateLayoutCoords(tSymmetric.rounds, tSymmetric.teams, 140, 64, 220, 100, 'double-sided');
+
+const finalsCoord = coordsSym[`${tSymmetric.rounds.length - 1}-0`];
+assert(finalsCoord !== undefined, 'Finals coord should exist');
+assert(finalsCoord.x === 220 + tSymmetric.rounds.length * 140, 'Finals should be centered');
+
+const r0m0 = coordsSym['0-0'];
+const r0m8 = coordsSym['0-8'];
+assert(r0m0.x === 360, 'Left wing R0-M0 should be at X=360');
+assert(r0m8.x === 1480, 'Right wing R0-M8 should be at X=1480');
+assert(r0m0.isRight === false, 'R0-M0 is left wing');
+assert(r0m8.isRight === true, 'R0-M8 is right wing');
+
+// 1回戦の線の長さが colWidth と同じになっているか
+assert(r0m8.x1 === 1620, 'R0-M8 (right wing card connector right side) should be at X=1620');
+assert(r0m8.x1 - r0m8.x === 140, 'Right wing R0-M8 line length should be 140');
+
+// 10. 左右非対称なチーム数における垂直アライメントのテスト
+console.log('Testing vertical alignment shift for asymmetric bracket (18 teams)...');
+const tAsymmetric = createTournament('Asymmetric Cup', 18, false, 'double-sided');
+const coordsAsym = calculateLayoutCoords(tAsymmetric.rounds, tAsymmetric.teams, 140, 64, 220, 100, 'double-sided');
+
+const R_asym = tAsymmetric.rounds.length;
+const leftSemi = coordsAsym[`${R_asym - 2}-0`];
+const rightSemi = coordsAsym[`${R_asym - 2}-1`];
+
+assert(leftSemi !== undefined, 'Left semifinal should exist');
+assert(rightSemi !== undefined, 'Right semifinal should exist');
+assert(leftSemi.y === rightSemi.y, `Semifinal Y coordinates should align: left=${leftSemi.y}, right=${rightSemi.y}`);
+
 console.log('--- All Tests Passed Successfully! ---');

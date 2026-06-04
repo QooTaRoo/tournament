@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Plus, Trash2, ChevronLeft, ZoomIn, ZoomOut, 
   RotateCcw, Edit2, Move, Check, X, Save, Upload, Download,
-  Users, Edit3, HelpCircle, FileText, Maximize2
+  Users, Edit3, HelpCircle, FileText
 } from 'lucide-react';
 import {
   createTournament,
@@ -26,6 +26,7 @@ function App() {
   const [setupTeamCount, setSetupTeamCount] = useState(8);
   const [setupName, setSetupName] = useState('');
   const [setupThirdPlace, setSetupThirdPlace] = useState(false);
+  const [setupLayoutStyle, setSetupLayoutStyle] = useState('single-sided'); // 'single-sided', 'double-sided'
 
   // ズーム・パン用ステート
   const [zoom, setZoom] = useState(1);
@@ -78,7 +79,7 @@ function App() {
 
   const handleCreate = () => {
     const name = setupName.trim() || `${setupTeamCount}チームのトーナメント`;
-    const newTournament = createTournament(name, setupTeamCount, setupThirdPlace);
+    const newTournament = createTournament(name, setupTeamCount, setupThirdPlace, setupLayoutStyle);
     setCurrentTournament(newTournament);
     
     const newList = [newTournament, ...savedTournaments];
@@ -91,6 +92,7 @@ function App() {
     setActiveScoreEdit(null);
     setSetupName('');
     setSetupThirdPlace(false);
+    setSetupLayoutStyle('single-sided');
   };
 
   const handleDelete = (id, e) => {
@@ -493,31 +495,10 @@ function App() {
     }
   }, []);
 
-  // 全体を画面に収める
-  const handleFitToPage = () => {
-    if (!viewportRef.current || !currentTournament) return;
-    const vWidth = viewportRef.current.clientWidth;
-    const vHeight = viewportRef.current.clientHeight;
 
-    const P_val = currentTournament.teams.length;
-    const R_val = Math.log2(P_val);
-    const hasTPMatch_val = currentTournament.thirdPlaceMatch !== null;
-    const currentSvgWidth = R_val * COL_WIDTH + 2 * PAD_X;
-    const currentSvgHeight = Math.max(500, (P_val / 2) * ROW_HEIGHT + 2 * PAD_Y + (hasTPMatch_val ? 150 : 0));
-
-    const zoomX = (vWidth - 32) / currentSvgWidth;
-    const zoomY = (vHeight - 32) / currentSvgHeight;
-    const calculatedZoom = Math.min(zoomX, zoomY);
-
-    const finalZoom = Math.max(0.3, Math.min(1.5, calculatedZoom));
-    setZoom(finalZoom);
-
-    viewportRef.current.scrollLeft = 0;
-    viewportRef.current.scrollTop = 0;
-  };
 
   // 定数
-  const COL_WIDTH = 200;
+  const COL_WIDTH = 140;
   const ROW_HEIGHT = 64;
   const PAD_X = 220;
   const PAD_Y = 100;
@@ -525,14 +506,20 @@ function App() {
   const isBracketView = view === 'bracket' && currentTournament;
   const P = isBracketView ? currentTournament.teams.length : 8;
   const R = Math.log2(P);
+  const N = isBracketView ? currentTournament.teamCount : 8;
+  const layoutStyle = isBracketView ? (currentTournament.layoutStyle || 'single-sided') : 'single-sided';
+  const isDoubleSided = layoutStyle === 'double-sided';
   
   // 座標マップ
-  const coords = isBracketView ? calculateLayoutCoords(currentTournament.rounds, currentTournament.teams, COL_WIDTH, ROW_HEIGHT, PAD_X, PAD_Y) : {};
+  const coords = isBracketView ? calculateLayoutCoords(currentTournament.rounds, currentTournament.teams, COL_WIDTH, ROW_HEIGHT, PAD_X, PAD_Y, layoutStyle) : {};
   
   // 3位決定戦がある場合は高さを拡張
   const hasTPMatch = isBracketView && currentTournament.thirdPlaceMatch != null;
-  const svgWidth = isBracketView ? (R * COL_WIDTH + 2 * PAD_X) : 800;
-  const svgHeight = isBracketView ? Math.max(500, P * ROW_HEIGHT + 2 * PAD_Y + (hasTPMatch ? 150 : 0)) : 600;
+  const svgWidth = isBracketView 
+    ? (isDoubleSided ? 2 * R * COL_WIDTH + 2 * PAD_X : R * COL_WIDTH + 2 * PAD_X) 
+    : 800;
+  const effectiveN = isDoubleSided ? Math.max(Math.ceil(N / 2), 2) : N;
+  const svgHeight = isBracketView ? Math.max(500, effectiveN * ROW_HEIGHT + 2 * PAD_Y + (hasTPMatch ? 150 : 0)) : 600;
 
   const getRoundLabel = (r) => {
     const diff = R - 1 - r;
@@ -696,7 +683,7 @@ function App() {
               />
             </div>
 
-            {setupTeamCount >= 4 && (
+             {setupTeamCount >= 4 && (
               <div className="form-group">
                 <label className="toggle-container" style={{ fontSize: '0.95rem' }}>
                   <input
@@ -709,6 +696,32 @@ function App() {
                 </label>
               </div>
             )}
+
+            <div className="form-group">
+              <label>レイアウト形式</label>
+              <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
+                <label className="toggle-container" style={{ fontSize: '0.95rem' }}>
+                  <input
+                    type="radio"
+                    name="layoutStyle"
+                    className="toggle-input"
+                    checked={setupLayoutStyle === 'single-sided'}
+                    onChange={() => setSetupLayoutStyle('single-sided')}
+                  />
+                  <span>片側形式 (標準)</span>
+                </label>
+                <label className="toggle-container" style={{ fontSize: '0.95rem' }}>
+                  <input
+                    type="radio"
+                    name="layoutStyle"
+                    className="toggle-input"
+                    checked={setupLayoutStyle === 'double-sided'}
+                    onChange={() => setSetupLayoutStyle('double-sided')}
+                  />
+                  <span>両側形式 (左右対称)</span>
+                </label>
+              </div>
+            </div>
 
             {/* シード情報プレビュー */}
             {(() => {
@@ -788,67 +801,131 @@ function App() {
               >
               {/* コラムヘッダー */}
               <div className="round-label-container">
-                {Array.from({ length: R }).map((_, r) => {
-                  const labelX = PAD_X + (r + 1) * COL_WIDTH;
-                  return (
+                {(() => {
+                  const headers = [];
+                  if (isDoubleSided) {
+                    for (let r = 0; r < R - 1; r++) {
+                      headers.push({
+                        key: `label-left-${r}`,
+                        left: PAD_X + (r + 1) * COL_WIDTH,
+                        label: getRoundLabel(r)
+                      });
+                      headers.push({
+                        key: `label-right-${r}`,
+                        left: PAD_X + (2 * R - 1 - r) * COL_WIDTH,
+                        label: getRoundLabel(r)
+                      });
+                    }
+                    headers.push({
+                      key: `label-finals`,
+                      left: PAD_X + R * COL_WIDTH,
+                      label: getRoundLabel(R - 1)
+                    });
+                  } else {
+                    for (let r = 0; r < R; r++) {
+                      headers.push({
+                        key: `label-${r}`,
+                        left: PAD_X + (r + 1) * COL_WIDTH,
+                        label: getRoundLabel(r)
+                      });
+                    }
+                  }
+                  return headers.map(h => (
                     <div 
-                      key={`label-${r}`} 
+                      key={h.key} 
                       className="round-label"
-                      style={{ left: `${labelX}px` }}
+                      style={{ left: `${h.left}px` }}
                     >
-                      {getRoundLabel(r)}
+                      {h.label}
                     </div>
-                  );
-                })}
+                  ));
+                })()}
               </div>
 
-              {/* 左端チームリスト (HTML) */}
-              {activeTeamsList.map((team, rowIdx) => {
-                const yCoord = PAD_Y + rowIdx * ROW_HEIGHT;
+              {/* チームリスト (HTML) */}
+              {(() => {
+                let leftCount = 0;
+                let rightCount = 0;
+                const halfP = P / 2;
 
-                return (
-                  <div 
-                    key={`team-row-${team.leafIdx}`}
-                    className="team-row-container"
-                    style={{ top: `${yCoord}px` }}
-                  >
-                    <div className="team-row-number">{rowIdx + 1}</div>
-                    
-                    <div className="team-row-card">
-                      {editingLeafIndex === team.leafIdx ? (
-                        <input
-                          type="text"
-                          className="inline-edit-input"
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') submitNameChange(team.leafIdx);
-                            if (e.key === 'Escape') setEditingLeafIndex(null);
-                          }}
-                          onBlur={() => submitNameChange(team.leafIdx)}
-                          autoFocus
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        <>
-                          <span className="team-name-text" title={team.name}>
-                            {team.name}
-                          </span>
-                          <div className="slot-actions">
-                            <button 
-                              className="slot-btn" 
-                              onClick={(e) => startEditingName(team.leafIdx, e)}
-                              title="チーム名を編集"
-                            >
-                              <Edit2 size={12} />
-                            </button>
-                          </div>
-                        </>
-                      )}
+                return activeTeamsList.map((team, rowIdx) => {
+                  const isRightTeam = isDoubleSided && team.leafIdx >= halfP;
+                  let yCoord, leftX, displayNum;
+
+                  const matchIdx = Math.floor(team.leafIdx / 2);
+                  const isUpper = team.leafIdx % 2 === 0;
+                  const c = coords[`0-${matchIdx}`];
+
+                  if (isRightTeam) {
+                    if (c) {
+                      yCoord = isUpper ? c.y1 : c.y2;
+                      leftX = c.x1 - 18;
+                    } else {
+                      yCoord = PAD_Y + rightCount * ROW_HEIGHT;
+                      leftX = PAD_X + 2 * R * COL_WIDTH - 18;
+                    }
+                    displayNum = rightCount + 1;
+                    rightCount++;
+                  } else {
+                    if (c) {
+                      yCoord = isUpper ? c.y1 : c.y2;
+                      leftX = c.x1 - 192;
+                    } else {
+                      yCoord = PAD_Y + leftCount * ROW_HEIGHT;
+                      leftX = PAD_X - 192;
+                    }
+                    displayNum = leftCount + 1;
+                    leftCount++;
+                  }
+
+                  return (
+                    <div 
+                      key={`team-row-${team.leafIdx}`}
+                      className={`team-row-container ${isRightTeam ? 'right-side' : ''}`}
+                      style={{ 
+                        top: `${yCoord}px`,
+                        left: `${leftX}px`,
+                        flexDirection: isRightTeam ? 'row-reverse' : 'row'
+                      }}
+                    >
+                      <div className="team-row-number">{displayNum}</div>
+                      
+                      <div className="team-row-card">
+                        {editingLeafIndex === team.leafIdx ? (
+                          <input
+                            type="text"
+                            className="inline-edit-input"
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') submitNameChange(team.leafIdx);
+                              if (e.key === 'Escape') setEditingLeafIndex(null);
+                            }}
+                            onBlur={() => submitNameChange(team.leafIdx)}
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <>
+                            <span className="team-name-text" title={team.name}>
+                              {team.name}
+                            </span>
+                            <div className="slot-actions">
+                              <button 
+                                className="slot-btn" 
+                                onClick={(e) => startEditingName(team.leafIdx, e)}
+                                title="チーム名を編集"
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
 
               {/* スコア編集用の丸型トリガーボタン (結果を入れられるアクティブ戦のみ表示) */}
               {currentTournament.rounds.map((round, r) => {
@@ -857,7 +934,7 @@ function App() {
                   const c = coords[`${r}-${m}`];
                   if (!c) return null;
 
-                  const btnX = (r === 0) ? c.x + 16 : c.x;
+                  const btnX = (r === 0) ? (c.isRight ? c.x - 16 : c.x + 16) : c.x;
 
                   return (
                     <button
@@ -879,7 +956,7 @@ function App() {
                 if (!c) return null;
 
                 const hasScoreBtn = (match.p1 !== null && match.p2 !== null);
-                const btnX = hasScoreBtn ? c.x - 16 : c.x;
+                const btnX = hasScoreBtn ? (c.isRight ? c.x + 16 : c.x - 16) : c.x;
 
                 return (
                   <button
@@ -989,7 +1066,7 @@ function App() {
                         {r < R - 1 && (
                           <line
                             className={`connector-line ${isOutputActive ? 'active' : ''}`}
-                            x1={c.x} y1={c.y} x2={c.x + COL_WIDTH} y2={c.y}
+                            x1={c.x} y1={c.y} x2={c.isRight ? c.x - COL_WIDTH : c.x + COL_WIDTH} y2={c.y}
                           />
                         )}
                       </g>
@@ -1006,6 +1083,9 @@ function App() {
                   const isTopActive = tp.p1 !== null && tp.winner === tp.p1;
                   const isBottomActive = tp.p2 !== null && tp.winner === tp.p2;
                   const isOutputActive = tp.winner !== null;
+
+                  const outputX = isDoubleSided ? c.x : coords['third-place-winner'].x - 130 / 2;
+                  const outputY = isDoubleSided ? coords['third-place-winner'].y - 64 / 2 : c.y;
 
                   return (
                     <g key="lines-third-place">
@@ -1027,7 +1107,7 @@ function App() {
                       />
                       <line
                         className={`connector-line ${isOutputActive ? 'active' : ''}`}
-                        x1={c.x} y1={c.y} x2={coords['third-place-winner'].x - 130 / 2} y2={c.y}
+                        x1={c.x} y1={c.y} x2={outputX} y2={outputY}
                       />
                     </g>
                   );
@@ -1040,11 +1120,14 @@ function App() {
                   if (!finalsCoord || !champCoord) return null;
 
                   const isActive = currentTournament.rounds[R - 1][0].winner !== null;
+                  const outputX = isDoubleSided ? finalsCoord.x : champCoord.x - 130 / 2;
+                  const outputY = isDoubleSided ? champCoord.y + 64 / 2 : champCoord.y;
+
                   return (
                     <line
                       className={`connector-line ${isActive ? 'active' : ''}`}
                       x1={finalsCoord.x} y1={finalsCoord.y}
-                      x2={champCoord.x - 130 / 2} y2={champCoord.y}
+                      x2={outputX} y2={outputY}
                     />
                   );
                 })()}
@@ -1254,9 +1337,7 @@ function App() {
           <button className="btn-icon" onClick={() => handleZoom('reset')} title="ズームをリセット">
             <RotateCcw size={18} />
           </button>
-          <button className="btn-icon" onClick={handleFitToPage} title="画面に収める">
-            <Maximize2 size={18} />
-          </button>
+
           <div style={{ width: 1, background: 'var(--border-color)', margin: '4px 0' }} />
           <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0 4px', gap: 4 }}>
             <HelpCircle size={12} />

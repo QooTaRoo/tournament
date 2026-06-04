@@ -1,16 +1,68 @@
-# React + Vite
+# Tournament Manager (PWA トーナメント管理アプリ)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+美しくレスポンシブなトーナメント表をブラウザ上で作成・管理・共有できる、PWA（Progressive Web App）対応の Web アプリケーションです。
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 主な機能
 
-## React Compiler
+### 1. 🌈 柔軟なレイアウト形式 (片側形式 / 両側形式)
+- **片側形式 (標準)**: 左から右へ勝ち進むおなじみの樹形図形式。
+- **両側形式 (左右対称)**: 準決勝まで左右に対称配置され、中央で決勝戦・3位決定戦を行う形式。
+  - **自動垂直アライメント**: 左右のチーム数が不均衡（またはバイの偏り）な場合でも、準決勝の結合線がまっすぐ水平に決勝へと繋がるよう、右翼側を上下に自動でオフセット調整します。
+  - **完全な左右対称グリッド**: 接続線の長さやカードの位置、コラムヘッダーが左右で完全に一致します。
+  - **自動センタリング**: 大画面PCなどで表示した際、トーナメントが画面の上下左右の中央に自動的に配置され、見栄えを保ちます。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 2. ⚡ 対戦 (マッチ) 単位のダイレクトスワップ
+- 1回戦の各対戦（バイシード枠を含む）の中央にある `Move` ボタンを押すだけで、他の対戦スロットと1タップで丸ごと位置を入れ替えることができます。ドラッグ操作が不要で、スマホでも直感的にシードの調整などが行えます。
 
-## Expanding the ESLint configuration
+### 3. 📱 スマホに特化した操作体験
+- **ピンチズーム**: 2本の指の「中心点（Pinch Center）」を基準にして吸い付くように拡大・縮小が可能です。
+- **タッチパン (スワイプ移動)**: 指でドラッグして広大なトーナメント表を滑らかに移動できます。
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 4. 🏆 シード（バイ）の自動最適配置
+- 任意のチーム数（2〜64）を入力すると、シード（バイ）を中央寄りのマッチから優先して均等に配分します。
+- シードチームは常にブラケットの外側に配置され、初期状態で進出線がアクティブ（赤色の太線）になります。
+
+### 5. ✏️ 高度な結果管理と編集
+- **スマートスコア非表示**: 得点を入力する前は画面に `0` は表示されず、未対戦の試合が一目でわかります。
+- **再帰的勝者伝播**: 試合結果を入力すると、勝者が自動で次のラウンドへ進出します。過去のスコアを書き換えた場合は、それ以降の下流の試合結果が安全にリセットされます。
+- **同点防止バリデーション**: トーナメントの仕様上、同点での保存は無効化され、警告文が表示されます。
+- **インラインチーム名編集**: チーム名カードをダブルクリックまたは編集ボタンからその場で変更でき、トーナメント全体に即座に同期されます。
+
+### 6. 💾 永続化とインポート・エクスポート
+- すべてのトーナメントデータはブラウザの LocalStorage に自動保存されます。
+- 作成したトーナメントは JSON ファイルとしてワンクリックでエクスポートでき、他のデバイスにインポートして復元できます。
+
+---
+
+## 🛠️ 技術スタック
+- **フロントエンド**: React (Vite / JSX)
+- **スタイリング**: Vanilla CSS (CSS変数、グラスモルフィズム、ダークモード基調のデザインシステム)
+- **アイコン**: Lucide React
+- **PWA実装**: Service Worker (キャッシュ制御), manifest.json
+
+---
+
+## 🚀 開発とビルド方法
+
+### 依存関係のインストール
+```bash
+npm install
+```
+
+### ローカル開発サーバーの起動
+```bash
+npm run dev
+```
+
+### プロダクションビルドの作成
+```bash
+npm run build
+```
+
+### 単体テストの実行
+樹形図の座標計算（NaNガード、対称計算、垂直アライメント）やバイ配置ロジックなどの単体テストを実行します。
+```bash
+node scratch/testUtils.js
+```

@@ -65,7 +65,7 @@ export function getByeIndices(teamCount, bracketSize) {
  * 新規トーナメントデータを構築します。
  * 3位決定戦(thirdPlaceMatch)はデフォルトで null (非アクティブ) とします。
  */
-export function createTournament(name, teamCount, hasThirdPlace = false) {
+export function createTournament(name, teamCount, hasThirdPlace = false, layoutStyle = 'single-sided') {
   const P = getBracketSize(teamCount);
   const M = P / 2;
   const B = P - teamCount;
@@ -132,7 +132,8 @@ export function createTournament(name, teamCount, hasThirdPlace = false) {
     teamCount,
     teams,
     rounds,
-    thirdPlaceMatch: null
+    thirdPlaceMatch: null,
+    layoutStyle
   };
 
   if (hasThirdPlace && teamCount >= 4) {
@@ -439,9 +440,158 @@ export function swapInitialSlots(tournament, idx1, idx2) {
 /**
  * 日本のトーナメント表（左側にチームリスト、右に樹形図）に合わせた座標 (X, Y) を計算します。
  */
-export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight = 60, padX = 220, padY = 80) {
-  const coords = {}; // key: 'r-m' -> { x, y, y1, y2, x1, x2 }
+export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight = 60, padX = 220, padY = 80, layoutStyle = 'single-sided') {
+  const coords = {}; // key: 'r-m' -> { x, y, y1, y2, x1, x2, isRight }
   const R = rounds.length;
+
+  if (layoutStyle === 'double-sided') {
+    const P = teams.length;
+    const halfP = P / 2;
+
+    const leafToRowMap = {};
+    let leftRow = 0;
+    let rightRow = 0;
+    for (let i = 0; i < P; i++) {
+      if (teams[i] !== null) {
+        if (i < halfP) {
+          leafToRowMap[i] = leftRow++;
+        } else {
+          leafToRowMap[i] = rightRow++;
+        }
+      }
+    }
+
+    const getLeafY = (leafIdx) => {
+      const row = leafToRowMap[leafIdx];
+      return padY + row * rowHeight;
+    };
+
+    const isByeMatch = (roundIdx, matchIdx) => {
+      if (roundIdx !== 0) return false;
+      const match = rounds[0][matchIdx];
+      return match && (match.p1 === null || match.p2 === null);
+    };
+
+    // 樹形図座標の計算
+    // 1. r = 0 から R - 2 までの座標を計算
+    for (let r = 0; r < R - 1; r++) {
+      const matchesInRound = rounds[r].length;
+      for (let m = 0; m < matchesInRound; m++) {
+        const match = rounds[r][m];
+        let y1, y2, x1, x2, x, y;
+
+        const isRight = m >= matchesInRound / 2;
+
+        if (r === 0) {
+          const leaf1 = 2 * m;
+          const leaf2 = 2 * m + 1;
+
+          if (match.p1 === null || match.p2 === null) {
+            const activeLeaf = match.p1 === null ? leaf2 : leaf1;
+            y = getLeafY(activeLeaf);
+            y1 = y;
+            y2 = y;
+          } else {
+            y1 = getLeafY(leaf1);
+            y2 = getLeafY(leaf2);
+            y = (y1 + y2) / 2;
+          }
+
+          if (isRight) {
+            x = padX + (2 * R - 1) * colWidth;
+            x1 = padX + 2 * R * colWidth;
+            x2 = padX + 2 * R * colWidth;
+          } else {
+            x = padX + colWidth;
+            x1 = padX;
+            x2 = padX;
+          }
+        } else {
+          const child1Coord = coords[`${r - 1}-${2 * m}`];
+          const child2Coord = coords[`${r - 1}-${2 * m + 1}`];
+
+          y1 = child1Coord.y;
+          y2 = child2Coord.y;
+          y = (y1 + y2) / 2;
+
+          const child1IsBye = isByeMatch(r - 1, 2 * m);
+          const child2IsBye = isByeMatch(r - 1, 2 * m + 1);
+
+          if (isRight) {
+            x = padX + (2 * R - 1 - r) * colWidth;
+            x1 = child1IsBye ? padX + 2 * R * colWidth : padX + (2 * R - r) * colWidth;
+            x2 = child2IsBye ? padX + 2 * R * colWidth : padX + (2 * R - r) * colWidth;
+          } else {
+            x = padX + (r + 1) * colWidth;
+            x1 = child1IsBye ? padX : padX + r * colWidth;
+            x2 = child2IsBye ? padX : padX + r * colWidth;
+          }
+        }
+
+        coords[`${r}-${m}`] = { x, y, y1, y2, x1, x2, isRight };
+      }
+    }
+
+    // 2. 準決勝のY座標を基準に、右翼側のトーナメントを上下にシフトして段差を解消
+    if (R >= 2) {
+      const leftSemi = coords[`${R - 2}-0`];
+      const rightSemi = coords[`${R - 2}-1`];
+      if (leftSemi && rightSemi) {
+        const diffY = leftSemi.y - rightSemi.y;
+        if (diffY !== 0) {
+          for (let r = 0; r < R - 1; r++) {
+            const matchesInRound = rounds[r].length;
+            for (let m = Math.floor(matchesInRound / 2); m < matchesInRound; m++) {
+              const c = coords[`${r}-${m}`];
+              if (c) {
+                c.y += diffY;
+                c.y1 += diffY;
+                c.y2 += diffY;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 3. 決勝 (r = R - 1) の座標を計算 (左右の準決勝がシフトにより水平に整列している)
+    {
+      const r = R - 1;
+      const child1Coord = coords[`${r - 1}-0`]; // 左翼準決勝
+      const child2Coord = coords[`${r - 1}-1`]; // 右翼準決勝
+      const y1 = child1Coord.y;
+      const y2 = child2Coord.y;
+      const y = (y1 + y2) / 2;
+      const x = padX + R * colWidth;
+      const x1 = child1Coord.x;
+      const x2 = child2Coord.x;
+
+      coords[`${r}-0`] = { x, y, y1, y2, x1, x2, isRight: false };
+    }
+
+    const finalsCoord = coords[`${R - 1}-0`];
+    coords['champion'] = {
+      x: finalsCoord.x,
+      y: finalsCoord.y - 80
+    };
+
+    const gap = 100;
+    const tpY = finalsCoord.y + gap;
+    coords['third-place'] = {
+      x: finalsCoord.x,
+      y: tpY,
+      y1: tpY - 20,
+      y2: tpY + 20,
+      x1: finalsCoord.x - colWidth,
+      x2: finalsCoord.x + colWidth
+    };
+    coords['third-place-winner'] = {
+      x: finalsCoord.x,
+      y: tpY + 80
+    };
+
+    return coords;
+  }
 
   const activeTeamIndices = [];
   for (let i = 0; i < teams.length; i++) {
@@ -505,7 +655,7 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
         x2 = child2IsBye ? padX : padX + r * colWidth;
       }
 
-      coords[`${r}-${m}`] = { x, y, y1, y2, x1, x2 };
+      coords[`${r}-${m}`] = { x, y, y1, y2, x1, x2, isRight: false };
     }
   }
 
