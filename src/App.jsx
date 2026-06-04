@@ -654,17 +654,26 @@ function App() {
 
             <div className="form-group">
               <label>チーム数</label>
-              <div className="team-count-slider-container">
-                <input
-                  type="range"
-                  min="2"
-                  max="64"
-                  className="team-count-slider"
-                  value={setupTeamCount}
-                  onChange={(e) => setSetupTeamCount(parseInt(e.target.value))}
-                />
-                <div className="team-count-badge">{setupTeamCount}</div>
-              </div>
+              <input
+                type="number"
+                min="2"
+                max="64"
+                className="form-input"
+                value={setupTeamCount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (!isNaN(val)) {
+                    setSetupTeamCount(Math.max(2, Math.min(64, val)));
+                  } else {
+                    setSetupTeamCount('');
+                  }
+                }}
+                onBlur={() => {
+                  if (setupTeamCount === '' || isNaN(setupTeamCount) || setupTeamCount < 2) {
+                    setSetupTeamCount(2);
+                  }
+                }}
+              />
             </div>
 
             {setupTeamCount >= 4 && (
@@ -908,7 +917,7 @@ function App() {
                 {/* 本戦対戦ライン（勝敗確定による赤線判定） */}
                 {currentTournament.rounds.map((round, r) => {
                   return round.map((match, m) => {
-                    if (r === 0 && match.p2 === null) return null;
+                    if (r === 0 && (match.p1 === null || match.p2 === null)) return null;
 
                     const c = coords[`${r}-${m}`];
                     if (!c) return null;
@@ -916,16 +925,18 @@ function App() {
                     // 赤線判定ルール:
                     // 1) 上部水平線:
                     const child1 = r > 0 ? currentTournament.rounds[r - 1][2 * m] : null;
-                    const child1IsBye = child1 && child1.p2 === null;
+                    const child1IsBye = child1 && (child1.p1 === null || child1.p2 === null);
                     const isTopActive = match.p1 !== null && (
+                      child1IsBye ||
                       (match.winner !== null && match.winner === match.p1) ||
                       (r > 0 && !child1IsBye && child1 && child1.winner === match.p1)
                     );
                     
                     // 2) 下部水平線:
                     const child2 = r > 0 ? currentTournament.rounds[r - 1][2 * m + 1] : null;
-                    const child2IsBye = child2 && child2.p2 === null;
+                    const child2IsBye = child2 && (child2.p1 === null || child2.p2 === null);
                     const isBottomActive = match.p2 !== null && (
+                      child2IsBye ||
                       (match.winner !== null && match.winner === match.p2) ||
                       (r > 0 && !child2IsBye && child2 && child2.winner === match.p2)
                     );
@@ -1023,7 +1034,7 @@ function App() {
                 {/* スコア数値テキスト表示 (本戦) */}
                 {currentTournament.rounds.map((round, r) => {
                   return round.map((match, m) => {
-                    if (r === 0 && match.p2 === null) return null;
+                    if (r === 0 && (match.p1 === null || match.p2 === null)) return null;
                     
                     const c = coords[`${r}-${m}`];
                     if (!c) return null;

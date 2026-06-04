@@ -34,7 +34,7 @@ assert(byes5.has(0) && byes5.has(1) && byes5.has(2), 'Byes distributed to matche
 
 const byes6 = getByeIndices(6, 8); // 2 byes out of 4 matches
 assert(byes6.size === 2, '6 teams -> 2 byes');
-assert(byes6.has(0) && byes6.has(2), 'Byes distributed to matches 0, 2');
+assert(byes6.has(1) && byes6.has(2), 'Byes distributed to matches 1, 2');
 
 // 3. Tournament generation tests
 console.log('Testing tournament generation...');
@@ -42,7 +42,7 @@ const t5 = createTournament('Test Cup', 5);
 assert(t5.teams.length === 8, 'Teams array size matches P=8');
 assert(t5.teams[0] === 'Team 1' && t5.teams[1] === null, 'Match 0 is a bye');
 assert(t5.teams[2] === 'Team 2' && t5.teams[3] === null, 'Match 1 is a bye');
-assert(t5.teams[4] === 'Team 3' && t5.teams[5] === null, 'Match 2 is a bye');
+assert(t5.teams[4] === null && t5.teams[5] === 'Team 3', 'Match 2 is a bye');
 assert(t5.teams[6] === 'Team 4' && t5.teams[7] === 'Team 5', 'Match 3 is active');
 
 // Round 1 check (R0)

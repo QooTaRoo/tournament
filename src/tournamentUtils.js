@@ -18,8 +18,25 @@ export function getByeIndices(teamCount, bracketSize) {
   const byeIndices = new Set();
   if (B <= 0) return byeIndices;
 
-  for (let i = 0; i < B; i++) {
-    byeIndices.add(Math.floor((i * M) / B));
+  // 中央インデックス M/2 付近から、外側へ向けて優先的にバイ（シード）を配置します。
+  // 優先順： M/2 - 1, M/2, M/2 - 2, M/2 + 1, M/2 - 3, M/2 + 2, ...
+  const priority = [];
+  let left = Math.floor(M / 2) - 1;
+  let right = Math.floor(M / 2);
+  while (left >= 0 || right < M) {
+    if (left >= 0) {
+      priority.push(left);
+      left--;
+    }
+    if (right < M) {
+      priority.push(right);
+      right++;
+    }
+  }
+
+  // 必要な B 個のバイを優先順に取り出します
+  for (let i = 0; i < B && i < priority.length; i++) {
+    byeIndices.add(priority[i]);
   }
   return byeIndices;
 }
@@ -39,8 +56,16 @@ export function createTournament(name, teamCount, hasThirdPlace = false) {
 
   for (let m = 0; m < M; m++) {
     if (byeIndices.has(m)) {
-      teams[2 * m] = `Team ${currentTeamNum++}`;
-      teams[2 * m + 1] = null; // バイ
+      // シードチームは「外側」に割り当て、内側（中心寄り）を null（バイ）にします。
+      // 上半分（m < M/2）なら 2m が外側、2m+1 が内側。
+      // 下半分（m >= M/2）なら 2m+1 が外側、2m が内側。
+      if (m < M / 2) {
+        teams[2 * m] = `Team ${currentTeamNum++}`;
+        teams[2 * m + 1] = null;
+      } else {
+        teams[2 * m] = null;
+        teams[2 * m + 1] = `Team ${currentTeamNum++}`;
+      }
     } else {
       teams[2 * m] = `Team ${currentTeamNum++}`;
       teams[2 * m + 1] = `Team ${currentTeamNum++}`;
