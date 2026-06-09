@@ -152,21 +152,48 @@ export function createTournament(name, teamCount, hasThirdPlace = false, layoutS
 /**
  * 試合の得点を登録し、自動的に勝者を判定して以降のラウンドに再帰伝播させます。
  */
-export function setMatchScores(rounds, roundIndex, matchIndex, score1, score2) {
+export function setMatchScores(rounds, roundIndex, matchIndex, score1, score2, sets = null, maxSets = 1) {
   const newRounds = JSON.parse(JSON.stringify(rounds));
   const match = newRounds[roundIndex][matchIndex];
 
-  const s1 = (score1 === '' || score1 === null || score1 === undefined) ? null : Number(score1);
-  const s2 = (score2 === '' || score2 === null || score2 === undefined) ? null : Number(score2);
+  if (sets && Array.isArray(sets) && sets.length > 0) {
+    match.sets = sets;
+    match.maxSets = maxSets;
+    let p1Sets = 0;
+    let p2Sets = 0;
+    let hasValidScore = false;
 
-  match.score1 = s1;
-  match.score2 = s2;
+    sets.forEach(set => {
+      const s1 = (set.score1 === '' || set.score1 === null || set.score1 === undefined) ? null : Number(set.score1);
+      const s2 = (set.score2 === '' || set.score2 === null || set.score2 === undefined) ? null : Number(set.score2);
+      if (s1 !== null && s2 !== null) {
+        hasValidScore = true;
+        if (s1 > s2) p1Sets++;
+        else if (s2 > s1) p2Sets++;
+      }
+    });
+
+    if (hasValidScore) {
+      match.score1 = p1Sets;
+      match.score2 = p2Sets;
+    } else {
+      match.score1 = null;
+      match.score2 = null;
+    }
+  } else {
+    const s1 = (score1 === '' || score1 === null || score1 === undefined) ? null : Number(score1);
+    const s2 = (score2 === '' || score2 === null || score2 === undefined) ? null : Number(score2);
+    match.score1 = s1;
+    match.score2 = s2;
+    match.sets = null;
+    match.maxSets = 1;
+  }
 
   // 得点に基づいて勝者を自動判定
-  if (s1 !== null && s2 !== null) {
-    if (s1 > s2) {
+  if (match.score1 !== null && match.score2 !== null) {
+    if (match.score1 > match.score2) {
       match.winner = match.p1;
-    } else if (s2 > s1) {
+    } else if (match.score2 > match.score1) {
       match.winner = match.p2;
     } else {
       match.winner = null; // 同点の場合はクリア
@@ -203,6 +230,8 @@ function propagateWinner(rounds, roundIndex, matchIndex) {
     nextMatch.winner = null;
     nextMatch.score1 = null;
     nextMatch.score2 = null;
+    nextMatch.sets = null;
+    nextMatch.maxSets = 1;
     propagateWinner(rounds, nextRoundIndex, nextMatchIndex);
   }
 }
@@ -253,29 +282,57 @@ export function updateThirdPlaceMatch(tournament) {
 /**
  * 3位決定戦のスコアを入力します。
  */
-export function setThirdPlaceScores(tournament, score1, score2) {
+export function setThirdPlaceScores(tournament, score1, score2, sets = null, maxSets = 1) {
   if (!tournament.thirdPlaceMatch) return tournament;
 
-  const s1 = (score1 === '' || score1 === null || score1 === undefined) ? null : Number(score1);
-  const s2 = (score2 === '' || score2 === null || score2 === undefined) ? null : Number(score2);
+  const tp = { ...tournament.thirdPlaceMatch };
+
+  if (sets && Array.isArray(sets) && sets.length > 0) {
+    tp.sets = sets;
+    tp.maxSets = maxSets;
+    let p1Sets = 0;
+    let p2Sets = 0;
+    let hasValidScore = false;
+
+    sets.forEach(set => {
+      const s1 = (set.score1 === '' || set.score1 === null || set.score1 === undefined) ? null : Number(set.score1);
+      const s2 = (set.score2 === '' || set.score2 === null || set.score2 === undefined) ? null : Number(set.score2);
+      if (s1 !== null && s2 !== null) {
+        hasValidScore = true;
+        if (s1 > s2) p1Sets++;
+        else if (s2 > s1) p2Sets++;
+      }
+    });
+
+    if (hasValidScore) {
+      tp.score1 = p1Sets;
+      tp.score2 = p2Sets;
+    } else {
+      tp.score1 = null;
+      tp.score2 = null;
+    }
+  } else {
+    const s1 = (score1 === '' || score1 === null || score1 === undefined) ? null : Number(score1);
+    const s2 = (score2 === '' || score2 === null || score2 === undefined) ? null : Number(score2);
+    tp.score1 = s1;
+    tp.score2 = s2;
+    tp.sets = null;
+    tp.maxSets = 1;
+  }
 
   let winner = null;
-  if (s1 !== null && s2 !== null) {
-    if (s1 > s2) {
-      winner = tournament.thirdPlaceMatch.p1;
-    } else if (s2 > s1) {
-      winner = tournament.thirdPlaceMatch.p2;
+  if (tp.score1 !== null && tp.score2 !== null) {
+    if (tp.score1 > tp.score2) {
+      winner = tp.p1;
+    } else if (tp.score2 > tp.score1) {
+      winner = tp.p2;
     }
   }
+  tp.winner = winner;
 
   return {
     ...tournament,
-    thirdPlaceMatch: {
-      ...tournament.thirdPlaceMatch,
-      score1: s1,
-      score2: s2,
-      winner
-    }
+    thirdPlaceMatch: tp
   };
 }
 
@@ -358,6 +415,8 @@ export function swapInitialSlots(tournament, idx1, idx2) {
     let winner = null;
     let score1 = null;
     let score2 = null;
+    let sets = null;
+    let maxSets = 1;
 
     if (p1 === null || p2 === null) {
       winner = p1 || p2;
@@ -366,11 +425,15 @@ export function swapInitialSlots(tournament, idx1, idx2) {
         score1 = oldMatch.score1;
         score2 = oldMatch.score2;
         winner = oldMatch.winner;
+        sets = oldMatch.sets || null;
+        maxSets = oldMatch.maxSets || 1;
       } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
         score1 = oldMatch.score2;
         score2 = oldMatch.score1;
-        if (oldMatch.winner) {
-          winner = oldMatch.winner;
+        winner = oldMatch.winner;
+        maxSets = oldMatch.maxSets || 1;
+        if (oldMatch.sets) {
+          sets = oldMatch.sets.map(s => ({ score1: s.score2, score2: s.score1 }));
         }
       }
     }
@@ -381,6 +444,8 @@ export function swapInitialSlots(tournament, idx1, idx2) {
       p2,
       score1,
       score2,
+      sets,
+      maxSets,
       winner
     });
   }
@@ -399,17 +464,23 @@ export function swapInitialSlots(tournament, idx1, idx2) {
       let winner = null;
       let score1 = null;
       let score2 = null;
+      let sets = null;
+      let maxSets = 1;
 
       if (oldMatch) {
         if (oldMatch.p1 === p1 && oldMatch.p2 === p2) {
           score1 = oldMatch.score1;
           score2 = oldMatch.score2;
           winner = oldMatch.winner;
+          sets = oldMatch.sets || null;
+          maxSets = oldMatch.maxSets || 1;
         } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
           score1 = oldMatch.score2;
           score2 = oldMatch.score1;
-          if (oldMatch.winner) {
-            winner = oldMatch.winner;
+          winner = oldMatch.winner;
+          maxSets = oldMatch.maxSets || 1;
+          if (oldMatch.sets) {
+            sets = oldMatch.sets.map(s => ({ score1: s.score2, score2: s.score1 }));
           }
         }
       }
@@ -420,6 +491,8 @@ export function swapInitialSlots(tournament, idx1, idx2) {
         p2,
         score1,
         score2,
+        sets,
+        maxSets,
         winner
       });
     }
@@ -580,15 +653,15 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
     const tpY = bottomY + 50;
     coords['third-place'] = {
       x: finalsCoord.x,
-      y: tpY,
-      y1: tpY - 20,
-      y2: tpY + 20,
-      x1: finalsCoord.x - colWidth,
-      x2: finalsCoord.x + colWidth
+      y: tpY + 80,
+      y1: tpY + 160,
+      y2: tpY + 160,
+      x1: finalsCoord.x - colWidth - 30,
+      x2: finalsCoord.x + colWidth + 30
     };
     coords['third-place-winner'] = {
       x: finalsCoord.x,
-      y: tpY + 80
+      y: tpY
     };
 
     return coords;
@@ -664,7 +737,7 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
   const lastRoundIdx = R - 1;
   const finalsCoord = coords[`${lastRoundIdx}-0`];
   coords['champion'] = {
-    x: finalsCoord.x + 80,
+    x: finalsCoord.x + 100,
     y: finalsCoord.y
   };
 
@@ -674,13 +747,13 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
   coords['third-place'] = {
     x: finalsCoord.x,
     y: tpY,
-    y1: tpY - 20,
-    y2: tpY + 20,
-    x1: finalsCoord.x - 60,
-    x2: finalsCoord.x - 60
+    y1: tpY - 45,
+    y2: tpY + 45,
+    x1: finalsCoord.x - 100,
+    x2: finalsCoord.x - 100
   };
   coords['third-place-winner'] = {
-    x: finalsCoord.x + 80,
+    x: finalsCoord.x + 100,
     y: tpY
   };
 
@@ -722,6 +795,8 @@ export function swapInitialMatches(tournament, m1, m2) {
     let winner = null;
     let score1 = null;
     let score2 = null;
+    let sets = null;
+    let maxSets = 1;
 
     if (p1 === null || p2 === null) {
       winner = p1 || p2;
@@ -730,11 +805,15 @@ export function swapInitialMatches(tournament, m1, m2) {
         score1 = oldMatch.score1;
         score2 = oldMatch.score2;
         winner = oldMatch.winner;
+        sets = oldMatch.sets || null;
+        maxSets = oldMatch.maxSets || 1;
       } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
         score1 = oldMatch.score2;
         score2 = oldMatch.score1;
-        if (oldMatch.winner) {
-          winner = oldMatch.winner;
+        winner = oldMatch.winner;
+        maxSets = oldMatch.maxSets || 1;
+        if (oldMatch.sets) {
+          sets = oldMatch.sets.map(s => ({ score1: s.score2, score2: s.score1 }));
         }
       }
     }
@@ -745,6 +824,8 @@ export function swapInitialMatches(tournament, m1, m2) {
       p2,
       score1,
       score2,
+      sets,
+      maxSets,
       winner
     });
   }
@@ -763,17 +844,23 @@ export function swapInitialMatches(tournament, m1, m2) {
       let winner = null;
       let score1 = null;
       let score2 = null;
+      let sets = null;
+      let maxSets = 1;
 
       if (oldMatch) {
         if (oldMatch.p1 === p1 && oldMatch.p2 === p2) {
           score1 = oldMatch.score1;
           score2 = oldMatch.score2;
           winner = oldMatch.winner;
+          sets = oldMatch.sets || null;
+          maxSets = oldMatch.maxSets || 1;
         } else if (oldMatch.p1 === p2 && oldMatch.p2 === p1) {
           score1 = oldMatch.score2;
           score2 = oldMatch.score1;
-          if (oldMatch.winner) {
-            winner = oldMatch.winner;
+          winner = oldMatch.winner;
+          maxSets = oldMatch.maxSets || 1;
+          if (oldMatch.sets) {
+            sets = oldMatch.sets.map(s => ({ score1: s.score2, score2: s.score1 }));
           }
         }
       }
@@ -784,6 +871,8 @@ export function swapInitialMatches(tournament, m1, m2) {
         p2,
         score1,
         score2,
+        sets,
+        maxSets,
         winner
       });
     }

@@ -47,6 +47,8 @@ function App() {
   const [activeScoreEdit, setActiveScoreEdit] = useState(null); // { roundIndex, matchIndex, x, y, isThirdPlace }
   const [popoverScore1, setPopoverScore1] = useState('');
   const [popoverScore2, setPopoverScore2] = useState('');
+  const [popoverMaxSets, setPopoverMaxSets] = useState(1);
+  const [popoverSets, setPopoverSets] = useState([{ score1: '', score2: '' }]);
 
   // 一括編集モーダル用ステート
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -171,18 +173,38 @@ function App() {
 
   // スコアポップオーバーを開く
   const openScoreEdit = (roundIndex, matchIndex, x, y, isThirdPlace = false) => {
+    const loadMatchData = (match) => {
+      setPopoverScore1(match.score1 !== null ? String(match.score1) : '');
+      setPopoverScore2(match.score2 !== null ? String(match.score2) : '');
+      
+      const maxSets = match.maxSets || 1;
+      setPopoverMaxSets(maxSets);
+      
+      if (match.sets && match.sets.length > 0) {
+        setPopoverSets(match.sets.map(s => ({
+          score1: s.score1 !== null ? String(s.score1) : '',
+          score2: s.score2 !== null ? String(s.score2) : ''
+        })));
+      } else {
+        setPopoverSets([
+          {
+            score1: match.score1 !== null ? String(match.score1) : '',
+            score2: match.score2 !== null ? String(match.score2) : ''
+          }
+        ]);
+      }
+    };
+
     if (isThirdPlace) {
       const tp = currentTournament.thirdPlaceMatch;
       if (!tp || tp.p1 === null || tp.p2 === null) return;
       setActiveScoreEdit({ roundIndex: -1, matchIndex: -1, x, y, isThirdPlace: true });
-      setPopoverScore1(tp.score1 !== null ? String(tp.score1) : '');
-      setPopoverScore2(tp.score2 !== null ? String(tp.score2) : '');
+      loadMatchData(tp);
     } else {
       const match = currentTournament.rounds[roundIndex][matchIndex];
       if (match.p1 === null || match.p2 === null) return;
       setActiveScoreEdit({ roundIndex, matchIndex, x, y, isThirdPlace: false });
-      setPopoverScore1(match.score1 !== null ? String(match.score1) : '');
-      setPopoverScore2(match.score2 !== null ? String(match.score2) : '');
+      loadMatchData(match);
     }
   };
 
@@ -192,10 +214,18 @@ function App() {
     const { roundIndex, matchIndex, isThirdPlace } = activeScoreEdit;
 
     let updated = { ...currentTournament };
+    
+    // popoverSetsを数値に変換
+    const finalSets = popoverMaxSets > 1 
+      ? popoverSets.map(s => ({
+          score1: s.score1 === '' ? null : Number(s.score1),
+          score2: s.score2 === '' ? null : Number(s.score2)
+        }))
+      : null;
 
     if (isThirdPlace) {
       // 3位決定戦スコア更新
-      updated = setThirdPlaceScores(updated, popoverScore1, popoverScore2);
+      updated = setThirdPlaceScores(updated, popoverScore1, popoverScore2, finalSets, popoverMaxSets);
     } else {
       // 本戦スコア更新
       const newRounds = setMatchScores(
@@ -203,7 +233,9 @@ function App() {
         roundIndex,
         matchIndex,
         popoverScore1,
-        popoverScore2
+        popoverScore2,
+        finalSets,
+        popoverMaxSets
       );
       updated.rounds = newRounds;
       // 3位決定戦への敗者伝播を同期
@@ -212,6 +244,61 @@ function App() {
 
     handleSaveCurrent(updated);
     setActiveScoreEdit(null);
+  };
+
+  // マッチ形式（セット数）変更時の処理
+  const handleMaxSetsChange = (newMaxSets) => {
+    setPopoverMaxSets(newMaxSets);
+    
+    let newSets = [...popoverSets];
+    if (newSets.length < newMaxSets) {
+      while (newSets.length < newMaxSets) {
+        newSets.push({ score1: '', score2: '' });
+      }
+    } else if (newSets.length > newMaxSets) {
+      newSets = newSets.slice(0, newMaxSets);
+    }
+    setPopoverSets(newSets);
+
+    // 獲得セット数を再計算
+    recalcSetCount(newSets);
+  };
+
+  // 各セット得点の変更時の処理
+  const handleSetScoreChange = (index, teamKey, value) => {
+    const newSets = popoverSets.map((set, i) => {
+      if (i === index) {
+        return { ...set, [teamKey]: value };
+      }
+      return set;
+    });
+    setPopoverSets(newSets);
+    recalcSetCount(newSets);
+  };
+
+  // セットスコアから獲得セット数を計算してpopoverScoreステートを更新
+  const recalcSetCount = (setsList) => {
+    let p1Sets = 0;
+    let p2Sets = 0;
+    let hasValidScore = false;
+
+    setsList.forEach(set => {
+      const s1 = set.score1 !== '' ? Number(set.score1) : null;
+      const s2 = set.score2 !== '' ? Number(set.score2) : null;
+      if (s1 !== null && s2 !== null) {
+        hasValidScore = true;
+        if (s1 > s2) p1Sets++;
+        else if (s2 > s1) p2Sets++;
+      }
+    });
+
+    if (hasValidScore) {
+      setPopoverScore1(String(p1Sets));
+      setPopoverScore2(String(p2Sets));
+    } else {
+      setPopoverScore1('');
+      setPopoverScore2('');
+    }
   };
 
   // 一括名前編集
@@ -257,6 +344,8 @@ function App() {
         p2,
         score1: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? oldMatch.score1 : null,
         score2: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? oldMatch.score2 : null,
+        sets: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? (oldMatch.sets || null) : null,
+        maxSets: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? (oldMatch.maxSets || 1) : 1,
         winner
       });
     }
@@ -283,6 +372,8 @@ function App() {
           p2,
           score1: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? oldMatch.score1 : null,
           score2: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? oldMatch.score2 : null,
+          sets: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? (oldMatch.sets || null) : null,
+          maxSets: (oldMatch && oldMatch.p1 === p1 && oldMatch.p2 === p2) ? (oldMatch.maxSets || 1) : 1,
           winner
         });
       }
@@ -519,7 +610,7 @@ function App() {
     ? (isDoubleSided ? 2 * R * COL_WIDTH + 2 * PAD_X : R * COL_WIDTH + 2 * PAD_X) 
     : 800;
   const effectiveN = isDoubleSided ? Math.max(Math.ceil(N / 2), 2) : N;
-  const svgHeight = isBracketView ? Math.max(500, effectiveN * ROW_HEIGHT + 2 * PAD_Y + (hasTPMatch ? 150 : 0)) : 600;
+  const svgHeight = isBracketView ? Math.max(500, effectiveN * ROW_HEIGHT + 2 * PAD_Y + (hasTPMatch ? 220 : 0)) : 600;
 
   const getRoundLabel = (r) => {
     const diff = R - 1 - r;
@@ -625,6 +716,7 @@ function App() {
                   >
                     <div className="tournament-card-title">{t.name}</div>
                     <div className="tournament-card-meta">
+                      <span>形式: {t.layoutStyle === 'double-sided' ? '両側表示' : '片側表示'}</span>
                       <span>チーム数: {t.teamCount}</span>
                       <span>3位決定戦: {t.thirdPlaceMatch ? 'あり' : 'なし'}</span>
                       <span>作成: {new Date(t.createdAt).toLocaleDateString()}</span>
@@ -1032,16 +1124,20 @@ function App() {
                     const child1 = r > 0 ? currentTournament.rounds[r - 1][2 * m] : null;
                     const child1IsBye = child1 && (child1.p1 === null || child1.p2 === null);
                     const isTopActive = match.p1 !== null && (
-                      (match.winner !== null && match.winner === match.p1) ||
-                      (r > 0 && !child1IsBye && child1 && child1.winner === match.p1)
+                      (isDoubleSided && r === R - 1)
+                        ? (match.winner !== null && match.winner === match.p1)
+                        : ((match.winner !== null && match.winner === match.p1) ||
+                           (r > 0 && !child1IsBye && child1 && child1.winner === match.p1))
                     );
                     
                     // 2) 下部水平線:
                     const child2 = r > 0 ? currentTournament.rounds[r - 1][2 * m + 1] : null;
                     const child2IsBye = child2 && (child2.p1 === null || child2.p2 === null);
                     const isBottomActive = match.p2 !== null && (
-                      (match.winner !== null && match.winner === match.p2) ||
-                      (r > 0 && !child2IsBye && child2 && child2.winner === match.p2)
+                      (isDoubleSided && r === R - 1)
+                        ? (match.winner !== null && match.winner === match.p2)
+                        : ((match.winner !== null && match.winner === match.p2) ||
+                           (r > 0 && !child2IsBye && child2 && child2.winner === match.p2))
                     );
 
                     // 3) 垂直線上半分: p1がこのマッチの勝者であるか
@@ -1071,12 +1167,19 @@ function App() {
                           className={`connector-line ${isBottomVerticalActive ? 'active' : ''}`}
                           x1={c.x} y1={c.y2} x2={c.x} y2={c.y}
                         />
-                        {r < R - 1 && (
-                          <line
-                            className={`connector-line ${isOutputActive ? 'active' : ''}`}
-                            x1={c.x} y1={c.y} x2={c.isRight ? c.x - COL_WIDTH : c.x + COL_WIDTH} y2={c.y}
-                          />
-                        )}
+                        {r < R - 1 && (() => {
+                          let isLineActive = isOutputActive;
+                          if (isDoubleSided && r === R - 2) {
+                            const finalMatch = currentTournament.rounds[R - 1][0];
+                            isLineActive = finalMatch.winner !== null && finalMatch.winner === match.winner;
+                          }
+                          return (
+                            <line
+                              className={`connector-line ${isLineActive ? 'active' : ''}`}
+                              x1={c.x} y1={c.y} x2={c.isRight ? c.x - COL_WIDTH : c.x + COL_WIDTH} y2={c.y}
+                            />
+                          );
+                        })()}
                       </g>
                     );
                   });
@@ -1093,7 +1196,34 @@ function App() {
                   const isOutputActive = tp.winner !== null;
 
                   const outputX = isDoubleSided ? c.x : coords['third-place-winner'].x - 130 / 2;
-                  const outputY = isDoubleSided ? coords['third-place-winner'].y - 64 / 2 : c.y;
+                  const outputY = isDoubleSided ? coords['third-place-winner'].y + 64 / 2 : c.y;
+
+                  if (isDoubleSided) {
+                    return (
+                      <g key="lines-third-place">
+                        <line
+                          className={`connector-line ${isTopActive ? 'active' : ''}`}
+                          x1={c.x1 + 60} y1={c.y1} x2={c.x1 + 60} y2={c.y}
+                        />
+                        <line
+                          className={`connector-line ${isBottomActive ? 'active' : ''}`}
+                          x1={c.x2 - 60} y1={c.y2} x2={c.x2 - 60} y2={c.y}
+                        />
+                        <line
+                          className={`connector-line ${isTopActive ? 'active' : ''}`}
+                          x1={c.x1 + 60} y1={c.y} x2={c.x} y2={c.y}
+                        />
+                        <line
+                          className={`connector-line ${isBottomActive ? 'active' : ''}`}
+                          x1={c.x2 - 60} y1={c.y} x2={c.x} y2={c.y}
+                        />
+                        <line
+                          className={`connector-line ${isOutputActive ? 'active' : ''}`}
+                          x1={c.x} y1={c.y} x2={outputX} y2={outputY}
+                        />
+                      </g>
+                    );
+                  }
 
                   return (
                     <g key="lines-third-place">
@@ -1150,13 +1280,15 @@ function App() {
 
                     const elements = [];
 
+                    const isFinalDoubleSided = isDoubleSided && r === R - 1;
+
                     if (match.score1 !== null) {
                       const isWinner = match.winner !== null && match.winner === match.p1;
                       elements.push(
                         <text
                           key={`score1-${r}-${m}`}
-                          x={c.x - 15}
-                          y={c.y1 - 6}
+                          x={isFinalDoubleSided ? c.x - 50 : c.x - 15}
+                          y={isFinalDoubleSided ? c.y + 25 : c.y1 - 6}
                           className={`score-text ${isWinner ? 'winner' : ''}`}
                           onClick={() => openScoreEdit(r, m, c.x, c.y, false)}
                         >
@@ -1170,8 +1302,8 @@ function App() {
                       elements.push(
                         <text
                           key={`score2-${r}-${m}`}
-                          x={c.x - 15}
-                          y={c.y2 + 16}
+                          x={isFinalDoubleSided ? c.x + 50 : c.x - 15}
+                          y={isFinalDoubleSided ? c.y + 25 : c.y2 + 16}
                           className={`score-text ${isWinner ? 'winner' : ''}`}
                           onClick={() => openScoreEdit(r, m, c.x, c.y, false)}
                         >
@@ -1196,8 +1328,8 @@ function App() {
                     elements.push(
                       <text
                         key="score1-third-place"
-                        x={c.x - 15}
-                        y={c.y1 - 6}
+                        x={isDoubleSided ? c.x - 50 : c.x - 15}
+                        y={isDoubleSided ? c.y + 30 : c.y1 - 6}
                         className={`score-text ${isWinner ? 'winner' : ''}`}
                         onClick={() => openScoreEdit(-1, -1, c.x, c.y, true)}
                       >
@@ -1210,8 +1342,8 @@ function App() {
                     elements.push(
                       <text
                         key="score2-third-place"
-                        x={isDoubleSided ? c.x + 15 : c.x - 15}
-                        y={c.y2 + 16}
+                        x={isDoubleSided ? c.x + 50 : c.x - 15}
+                        y={isDoubleSided ? c.y + 30 : c.y2 + 16}
                         className={`score-text ${isWinner ? 'winner' : ''}`}
                         onClick={() => openScoreEdit(-1, -1, c.x, c.y, true)}
                       >
@@ -1222,6 +1354,96 @@ function App() {
                   return elements;
                 })()}
               </svg>
+
+              {/* 山の中のセットスコア表示 (HTML絶対配置) */}
+              {currentTournament.rounds.map((round, r) => {
+                return round.map((match, m) => {
+                  if (match.p1 === null || match.p2 === null) return null;
+
+                  const validSets = match.sets && match.sets.length > 0
+                    ? match.sets.filter(s => s.score1 !== null && s.score2 !== null)
+                    : (match.score1 !== null && match.score2 !== null ? [{ score1: match.score1, score2: match.score2 }] : []);
+
+                  if (validSets.length === 0) return null;
+
+                  const c = coords[`${r}-${m}`];
+                  if (!c) return null;
+
+                  const isFinalDoubleSided = isDoubleSided && r === R - 1;
+                  const setsOffset = 65;
+                  const setsX = isFinalDoubleSided ? c.x : (c.isRight ? c.x + setsOffset : c.x - setsOffset);
+                  const setsY = isFinalDoubleSided ? c.y + 25 : c.y;
+                  const K = validSets.length;
+                  const bracketFontSize = K === 1 ? '16px' : K === 3 ? '26px' : '38px';
+
+                  return (
+                    <div
+                      key={`sets-disp-${r}-${m}`}
+                      className="sets-bracket-display"
+                      style={{ left: `${setsX}px`, top: `${setsY}px` }}
+                      onClick={() => openScoreEdit(r, m, setsX, c.y, false)}
+                    >
+                      <div className="bracket-left" style={{ fontSize: bracketFontSize }}>(</div>
+                      <div className="sets-list-table">
+                        {validSets.map((s, idx) => (
+                          <div key={idx} className="set-score-row">
+                            <span className={`set-score-val p1 ${Number(s.score1) > Number(s.score2) ? 'winner' : ''}`}>
+                              {s.score1}
+                            </span>
+                            <span className="set-score-divider">-</span>
+                            <span className={`set-score-val p2 ${Number(s.score2) > Number(s.score1) ? 'winner' : ''}`}>
+                              {s.score2}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="bracket-right" style={{ fontSize: bracketFontSize }}>)</div>
+                    </div>
+                  );
+                });
+              })}
+
+              {/* 3位決定戦の山の中のセットスコア表示 (HTML絶対配置) */}
+              {hasTPMatch && currentTournament.thirdPlaceMatch.p1 !== null && currentTournament.thirdPlaceMatch.p2 !== null && (() => {
+                const tp = currentTournament.thirdPlaceMatch;
+                const validSets = tp.sets && tp.sets.length > 0
+                  ? tp.sets.filter(s => s.score1 !== null && s.score2 !== null)
+                  : (tp.score1 !== null && tp.score2 !== null ? [{ score1: tp.score1, score2: tp.score2 }] : []);
+
+                if (validSets.length === 0) return null;
+
+                const c = coords['third-place'];
+                if (!c) return null;
+
+                const setsOffset = 65;
+                const setsX = isDoubleSided ? c.x : c.x - setsOffset;
+                const K = validSets.length;
+                const bracketFontSize = K === 1 ? '16px' : K === 3 ? '26px' : '38px';
+
+                return (
+                  <div
+                    className="sets-bracket-display"
+                    style={{ left: `${setsX}px`, top: `${isDoubleSided ? c.y + 30 : c.y}px` }}
+                    onClick={() => openScoreEdit(-1, -1, setsX, c.y, true)}
+                  >
+                    <div className="bracket-left" style={{ fontSize: bracketFontSize }}>(</div>
+                    <div className="sets-list-table">
+                      {validSets.map((s, idx) => (
+                        <div key={idx} className="set-score-row">
+                          <span className={`set-score-val p1 ${Number(s.score1) > Number(s.score2) ? 'winner' : ''}`}>
+                            {s.score1}
+                          </span>
+                          <span className="set-score-divider">-</span>
+                          <span className={`set-score-val p2 ${Number(s.score2) > Number(s.score1) ? 'winner' : ''}`}>
+                            {s.score2}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="bracket-right" style={{ fontSize: bracketFontSize }}>)</div>
+                  </div>
+                );
+              })()}
 
               {/* 5. 得点入力ポップオーバー (HTML絶対配置) */}
               {activeScoreEdit && (() => {
@@ -1237,8 +1459,51 @@ function App() {
                   ? '3位決定戦' 
                   : `${getRoundLabel(roundIndex)} 第${matchIndex + 1}試合`;
 
-                const isTie = popoverScore1 !== '' && popoverScore2 !== '' && Number(popoverScore1) === Number(popoverScore2);
-                const isSaveDisabled = popoverScore1 === '' || popoverScore2 === '' || isTie;
+                // バリデーション条件の計算
+                let isSaveDisabled = false;
+                let isTieFound = false;
+                let warningMessage = '';
+
+                if (popoverMaxSets === 1) {
+                  const s1 = popoverScore1;
+                  const s2 = popoverScore2;
+                  const isTie = s1 !== '' && s2 !== '' && Number(s1) === Number(s2);
+                  isSaveDisabled = s1 === '' || s2 === '' || isTie;
+                  if (isTie) {
+                    warningMessage = '※同点では登録できません';
+                  }
+                } else {
+                  // 複数セットの場合のバリデーション
+                  let p1Sets = 0;
+                  let p2Sets = 0;
+                  
+                  popoverSets.forEach((set) => {
+                    const s1 = set.score1;
+                    const s2 = set.score2;
+                    
+                    if (s1 !== '' && s2 !== '') {
+                      const num1 = Number(s1);
+                      const num2 = Number(s2);
+                      if (num1 === num2) {
+                        isTieFound = true;
+                      } else {
+                        if (num1 > num2) p1Sets++;
+                        else p2Sets++;
+                      }
+                    }
+                  });
+
+                  const neededToWin = Math.ceil(popoverMaxSets / 2);
+                  const isWinnerDetermined = p1Sets >= neededToWin || p2Sets >= neededToWin;
+
+                  if (isTieFound) {
+                    warningMessage = '※セット内で同点（引き分け）の入力があります';
+                    isSaveDisabled = true;
+                  } else if (!isWinnerDetermined) {
+                    warningMessage = `※勝敗が未確定です（どちらかが${neededToWin}セット先取する必要があります）`;
+                    isSaveDisabled = true;
+                  }
+                }
 
                 return (
                   <div 
@@ -1247,34 +1512,98 @@ function App() {
                   >
                     <div className="score-popover-title">{matchTitle}</div>
                     
-                    <div className="score-popover-row">
-                      <span className="score-popover-team" title={match.p1 || 'Semifinalist 1'}>{match.p1 || '準決勝敗者1'}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        className="score-popover-input"
-                        value={popoverScore1}
-                        onChange={(e) => setPopoverScore1(e.target.value)}
-                        placeholder="0"
-                        autoFocus
-                      />
+                    {/* マッチ形式（最大セット数）選択肢 */}
+                    <div className="match-type-selector">
+                      <div className="selector-label">試合形式:</div>
+                      <div className="selector-buttons">
+                        {[1, 3, 5].map((s) => (
+                          <button
+                            key={`sets-btn-${s}`}
+                            type="button"
+                            className={`selector-btn ${popoverMaxSets === s ? 'active' : ''}`}
+                            onClick={() => handleMaxSetsChange(s)}
+                          >
+                            {s === 1 ? '1セット' : `${s}セット`}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+
+                    {popoverMaxSets === 1 ? (
+                      // 1セットマッチ（通常）
+                      <>
+                        <div className="score-popover-row">
+                          <span className="score-popover-team" title={match.p1 || 'Semifinalist 1'}>{match.p1 || '準決勝敗者1'}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            className="score-popover-input"
+                            value={popoverScore1}
+                            onChange={(e) => setPopoverScore1(e.target.value)}
+                            placeholder="0"
+                            autoFocus
+                          />
+                        </div>
+                        
+                        <div className="score-popover-row">
+                          <span className="score-popover-team" title={match.p2 || 'Semifinalist 2'}>{match.p2 || '準決勝敗者2'}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            className="score-popover-input"
+                            value={popoverScore2}
+                            onChange={(e) => setPopoverScore2(e.target.value)}
+                            placeholder="0"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      // 複数セットマッチ
+                      <div className="sets-container">
+                        {/* プレビュー表示 */}
+                        <div className="sets-preview-header">
+                          <div className="preview-label">セットカウント:</div>
+                          <div className="preview-values">
+                            <span className={Number(popoverScore1) > Number(popoverScore2) ? 'winner' : ''}>{popoverScore1 || 0}</span>
+                            <span> - </span>
+                            <span className={Number(popoverScore2) > Number(popoverScore1) ? 'winner' : ''}>{popoverScore2 || 0}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="sets-input-scroll">
+                          {popoverSets.map((set, idx) => (
+                            <div key={`set-row-${idx}`} className="set-input-row">
+                              <div className="set-row-label">セット {idx + 1}</div>
+                              <div className="set-inputs">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  className="score-popover-input mini"
+                                  value={set.score1}
+                                  onChange={(e) => handleSetScoreChange(idx, 'score1', e.target.value)}
+                                  placeholder="0"
+                                  title={`${match.p1 || 'チーム1'}の得点`}
+                                />
+                                <span className="set-vs">vs</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  className="score-popover-input mini"
+                                  value={set.score2}
+                                  onChange={(e) => handleSetScoreChange(idx, 'score2', e.target.value)}
+                                  placeholder="0"
+                                  title={`${match.p2 || 'チーム2'}の得点`}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
-                    <div className="score-popover-row">
-                      <span className="score-popover-team" title={match.p2 || 'Semifinalist 2'}>{match.p2 || '準決勝敗者2'}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        className="score-popover-input"
-                        value={popoverScore2}
-                        onChange={(e) => setPopoverScore2(e.target.value)}
-                        placeholder="0"
-                      />
-                    </div>
-                    
-                    {isTie && (
+                    {warningMessage && (
                       <div className="score-popover-warning" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '2px', textAlign: 'center', fontWeight: 'bold' }}>
-                        ※同点では登録できません
+                        {warningMessage}
                       </div>
                     )}
 

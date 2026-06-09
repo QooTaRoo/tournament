@@ -1043,3 +1043,224 @@ body {
   z-index: 5;
 }
 
+/* セットスコア機能用追加スタイル */
+
+/* 試合形式（セット数）セレクター */
+.match-type-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.selector-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.selector-buttons {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-input);
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.selector-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.selector-btn:hover {
+  color: var(--text-primary);
+}
+
+.selector-btn.active {
+  background: #ffffff;
+  color: var(--accent-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* 複数セットコンテナ */
+.sets-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 獲得セット数プレビュー */
+.sets-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(79, 70, 229, 0.03);
+  border: 1px solid rgba(79, 70, 229, 0.1);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.preview-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.preview-values {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.preview-values span.winner {
+  color: var(--accent-danger);
+}
+
+/* セット得点入力スクロール */
+.sets-input-scroll {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.set-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 6px;
+}
+
+.set-input-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.set-row-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.set-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-popover-input.mini {
+  width: 44px;
+  height: 28px;
+  font-size: 0.85rem;
+  padding: 2px;
+}
+
+.set-vs {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+/* 山の中のセットスコア表示用 HTML要素 */
+.sets-bracket-display {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%); /* 縦横完全中央寄せ */
+  cursor: pointer;
+  user-select: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; /* 数字が揃いやすい等幅フォント */
+  z-index: 5;
+  pointer-events: auto;
+  gap: 2px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px; /* カプセル型のバッジデザイン */
+  padding: 2px 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.sets-bracket-display:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.15);
+}
+
+.sets-bracket-display:hover .bracket-left,
+.sets-bracket-display:hover .bracket-right,
+.sets-bracket-display:hover .set-score-val,
+.sets-bracket-display:hover .set-score-divider {
+  color: var(--accent-primary);
+}
+
+/* 括弧の表現 */
+.bracket-left,
+.bracket-right {
+  font-weight: 300;
+  color: #64748b;
+  line-height: 0.9;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+/* テーブル構造で縦横を完全に揃える */
+.sets-list-table {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1px;
+}
+
+.set-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.set-score-val {
+  color: #64748b; /* 通常はスレートグレー */
+  transition: color 0.2s;
+}
+
+.set-score-val.p1 {
+  text-align: right;
+  width: 15px; /* 2桁数字が右詰めで綺麗に揃う幅 */
+}
+
+.set-score-val.p2 {
+  text-align: right;
+  width: 15px; /* 2桁数字が右詰めで綺麗に揃う幅 */
+}
+
+.set-score-val.winner {
+  color: var(--accent-danger); /* 勝ったスコアは赤 */
+}
+
+.set-score-divider {
+  color: #94a3b8;
+  width: 8px;
+  text-align: center;
+  transition: color 0.2s;
+}
+
