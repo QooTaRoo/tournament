@@ -575,8 +575,9 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
       y: finalsCoord.y - 80
     };
 
-    const gap = 100;
-    const tpY = finalsCoord.y + gap;
+    const effectiveN = Math.max(leftRow, rightRow);
+    const bottomY = padY + effectiveN * rowHeight;
+    const tpY = bottomY + 50;
     coords['third-place'] = {
       x: finalsCoord.x,
       y: tpY,
@@ -667,9 +668,9 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
     y: finalsCoord.y
   };
 
-  // 3位決定戦用のレイアウト座標（決勝の 120px 下に配置、横位置は決勝と同じ）
-  const gap = 120;
-  const tpY = finalsCoord.y + gap;
+  const N = activeTeamIndices.length;
+  const bottomY = padY + N * rowHeight;
+  const tpY = bottomY + 50;
   coords['third-place'] = {
     x: finalsCoord.x,
     y: tpY,

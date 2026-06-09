@@ -554,7 +554,7 @@ function App() {
               title="クリックしてタイトルを編集"
             />
           ) : (
-            <h1>トーナメント表作成 PWA</h1>
+            <h1>トーナメント表作成</h1>
           )}
         </div>
         <div className="header-actions">
@@ -668,16 +668,24 @@ function App() {
                 className="form-input"
                 value={setupTeamCount}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  if (!isNaN(val)) {
-                    setSetupTeamCount(Math.max(2, Math.min(64, val)));
-                  } else {
+                  const val = e.target.value;
+                  if (val === '') {
                     setSetupTeamCount('');
+                  } else {
+                    const parsed = parseInt(val, 10);
+                    if (!isNaN(parsed)) {
+                      setSetupTeamCount(parsed);
+                    }
                   }
                 }}
                 onBlur={() => {
-                  if (setupTeamCount === '' || isNaN(setupTeamCount) || setupTeamCount < 2) {
+                  const val = parseInt(setupTeamCount, 10);
+                  if (isNaN(val) || val < 2) {
                     setSetupTeamCount(2);
+                  } else if (val > 64) {
+                    setSetupTeamCount(64);
+                  } else {
+                    setSetupTeamCount(val);
                   }
                 }}
               />
@@ -1202,7 +1210,7 @@ function App() {
                     elements.push(
                       <text
                         key="score2-third-place"
-                        x={c.x - 15}
+                        x={isDoubleSided ? c.x + 15 : c.x - 15}
                         y={c.y2 + 16}
                         className={`score-text ${isWinner ? 'winner' : ''}`}
                         onClick={() => openScoreEdit(-1, -1, c.x, c.y, true)}
@@ -1301,6 +1309,46 @@ function App() {
                       {winner || '未決着'}
                     </div>
                   </div>
+                );
+              })()}
+
+              {/* 3位決定戦の対戦相手（準決勝敗者）表示カード */}
+              {hasTPMatch && (() => {
+                const c = coords['third-place'];
+                if (!c) return null;
+                const tp = currentTournament.thirdPlaceMatch;
+                const cardWidth = 120;
+                
+                const p1X = isDoubleSided ? c.x1 : c.x1 - cardWidth;
+                const p2X = isDoubleSided ? c.x2 - cardWidth : c.x2 - cardWidth;
+
+                return (
+                  <>
+                    <div 
+                      className="team-row-card tp-team-card" 
+                      style={{ 
+                        left: `${p1X}px`, 
+                        top: `${c.y1}px`
+                      }}
+                      title={tp.p1 || '準決勝敗者1'}
+                    >
+                      <span className="team-name-text" style={{ textAlign: 'center' }}>
+                        {tp.p1 || '準決勝敗者1'}
+                      </span>
+                    </div>
+                    <div 
+                      className="team-row-card tp-team-card" 
+                      style={{ 
+                        left: `${p2X}px`, 
+                        top: `${c.y2}px`
+                      }}
+                      title={tp.p2 || '準決勝敗者2'}
+                    >
+                      <span className="team-name-text" style={{ textAlign: 'center' }}>
+                        {tp.p2 || '準決勝敗者2'}
+                      </span>
+                    </div>
+                  </>
                 );
               })()}
 
