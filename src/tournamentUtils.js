@@ -648,9 +648,7 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
       y: finalsCoord.y - 80
     };
 
-    const effectiveN = Math.max(leftRow, rightRow);
-    const bottomY = padY + effectiveN * rowHeight;
-    const tpY = bottomY + 50;
+    const tpY = finalsCoord.y + 120;
     coords['third-place'] = {
       x: finalsCoord.x,
       y: tpY + 80,
