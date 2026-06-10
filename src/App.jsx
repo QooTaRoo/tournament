@@ -422,13 +422,15 @@ function App() {
           if (node.classList) {
             if (node.classList.contains('score-edit-trigger')) return false;
             if (node.classList.contains('slot-actions')) return false;
+            if (node.classList.contains('match-swap-trigger')) return false;
+            if (node.classList.contains('swap-target-trigger')) return false;
           }
           return true;
         }
       });
 
       const link = document.createElement('a');
-      link.download = `${currentTournament.name || 'tournament'}_bracket.png`;
+      link.download = `${currentTournament.name || 'tournament'}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -647,7 +649,7 @@ function App() {
     ? (isDoubleSided ? 2 * R * COL_WIDTH + 2 * PAD_X : R * COL_WIDTH + 2 * PAD_X) 
     : 800;
   const effectiveN = isDoubleSided ? Math.max(Math.ceil(N / 2), 2) : N;
-  const svgHeight = isBracketView ? Math.max(500, effectiveN * ROW_HEIGHT + 2 * PAD_Y + (hasTPMatch ? 220 : 0)) : 600;
+  const svgHeight = isBracketView ? Math.max(500, effectiveN * ROW_HEIGHT + 2 * PAD_Y + ((hasTPMatch && !isDoubleSided) ? 220 : 0)) : 600;
 
   const getRoundLabel = (r) => {
     const diff = R - 1 - r;
@@ -1152,6 +1154,19 @@ function App() {
 
               {/* SVG 樹形図 */}
               <svg className="bracket-svg" width={svgWidth} height={svgHeight}>
+                <style>{`
+                  .connector-line {
+                    fill: none;
+                    stroke: #cbd5e1;
+                    stroke-width: 2.2px;
+                    stroke-linecap: round;
+                    stroke-linejoin: round;
+                  }
+                  .connector-line.active {
+                    stroke: #ef4444;
+                    stroke-width: 3.5px;
+                  }
+                `}</style>
                 {/* 本戦対戦ライン（勝敗確定による赤線判定） */}
                 {currentTournament.rounds.map((round, r) => {
                   return round.map((match, m) => {
