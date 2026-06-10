@@ -643,13 +643,29 @@ function App() {
   // 座標マップ
   const coords = isBracketView ? calculateLayoutCoords(currentTournament.rounds, currentTournament.teams, COL_WIDTH, ROW_HEIGHT, PAD_X, PAD_Y, layoutStyle) : {};
   
-  // 3位決定戦がある場合は高さを拡張
+  // 3位決定戦がある場合は幅を拡張
   const hasTPMatch = isBracketView && currentTournament.thirdPlaceMatch != null;
   const svgWidth = isBracketView 
     ? (isDoubleSided ? 2 * R * COL_WIDTH + 2 * PAD_X : R * COL_WIDTH + 2 * PAD_X) 
     : 800;
-  const effectiveN = isDoubleSided ? Math.max(Math.ceil(N / 2), 2) : N;
-  const svgHeight = isBracketView ? Math.max(500, effectiveN * ROW_HEIGHT + 2 * PAD_Y + ((hasTPMatch && !isDoubleSided) ? 220 : 0)) : 600;
+
+  // 座標マップから全体の高さを動的に計算（余分な下部余白を完全に削減）
+  const calculateDynamicSvgHeight = () => {
+    if (!isBracketView) return 600;
+    let maxY = 0;
+    Object.keys(coords).forEach(key => {
+      const c = coords[key];
+      if (c) {
+        if (typeof c.y === 'number') maxY = Math.max(maxY, c.y);
+        if (typeof c.y1 === 'number') maxY = Math.max(maxY, c.y1);
+        if (typeof c.y2 === 'number') maxY = Math.max(maxY, c.y2);
+      }
+    });
+    // 最大基準点に対して、選手カードの高さや最低限のパディングを考慮した+85pxを加算
+    return Math.max(500, maxY + 85);
+  };
+
+  const svgHeight = calculateDynamicSvgHeight();
 
   const getRoundLabel = (r) => {
     const diff = R - 1 - r;
