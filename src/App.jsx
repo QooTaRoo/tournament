@@ -1372,14 +1372,14 @@ function App() {
                   const isFinalDoubleSided = isDoubleSided && r === R - 1;
                   const setsOffset = 65;
                   const setsX = isFinalDoubleSided ? c.x : (c.isRight ? c.x + setsOffset : c.x - setsOffset);
-                  const setsY = isFinalDoubleSided ? c.y + 25 : c.y;
+                  const setsY = isFinalDoubleSided ? c.y + 18 : c.y;
                   const K = validSets.length;
                   const bracketFontSize = K === 1 ? '16px' : K === 3 ? '26px' : '38px';
 
                   return (
                     <div
                       key={`sets-disp-${r}-${m}`}
-                      className="sets-bracket-display"
+                      className={`sets-bracket-display ${isFinalDoubleSided ? 'top-aligned' : ''}`}
                       style={{ left: `${setsX}px`, top: `${setsY}px` }}
                       onClick={() => openScoreEdit(r, m, setsX, c.y, false)}
                     >
@@ -1422,8 +1422,8 @@ function App() {
 
                 return (
                   <div
-                    className="sets-bracket-display"
-                    style={{ left: `${setsX}px`, top: `${isDoubleSided ? c.y + 30 : c.y}px` }}
+                    className={`sets-bracket-display ${isDoubleSided ? 'top-aligned' : ''}`}
+                    style={{ left: `${setsX}px`, top: `${isDoubleSided ? c.y + 18 : c.y}px` }}
                     onClick={() => openScoreEdit(-1, -1, setsX, c.y, true)}
                   >
                     <div className="bracket-left" style={{ fontSize: bracketFontSize }}>(</div>

@@ -648,7 +648,19 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
       y: finalsCoord.y - 80
     };
 
-    const tpY = finalsCoord.y + 120;
+    let tpY;
+    if (R >= 3) {
+      const qfRound = R - 3;
+      const qfMatch = Math.floor(rounds[qfRound].length / 2) - 1;
+      const qfCoord = coords[`${qfRound}-${qfMatch}`];
+      if (qfCoord) {
+        tpY = qfCoord.y + 32;
+      } else {
+        tpY = finalsCoord.y + 120;
+      }
+    } else {
+      tpY = finalsCoord.y + 120;
+    }
     coords['third-place'] = {
       x: finalsCoord.x,
       y: tpY + 80,

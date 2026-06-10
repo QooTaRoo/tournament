@@ -1202,6 +1202,14 @@ body {
   box-shadow: 0 4px 8px rgba(79, 70, 229, 0.15);
 }
 
+.sets-bracket-display.top-aligned {
+  transform: translate(-50%, 0);
+}
+
+.sets-bracket-display.top-aligned:hover {
+  transform: translate(-50%, 0) scale(1.08);
+}
+
 .sets-bracket-display:hover .bracket-left,
 .sets-bracket-display:hover .bracket-right,
 .sets-bracket-display:hover .set-score-val,
