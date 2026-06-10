@@ -1702,24 +1702,26 @@ function App() {
           </div>
         </div>
 
-        {/* ズーム／パンコントロールパネル */}
-        <div className="controls-overlay">
-          <button className="btn-icon" onClick={() => handleZoom('in')} title="拡大">
-            <ZoomIn size={18} />
-          </button>
-          <button className="btn-icon" onClick={() => handleZoom('out')} title="縮小">
-            <ZoomOut size={18} />
-          </button>
-          <button className="btn-icon" onClick={() => handleZoom('reset')} title="ズームをリセット">
-            <RotateCcw size={18} />
-          </button>
+        {/* ズーム／パンコントロールパネル (スコア入力中は入力画面の邪魔にならないよう非表示に) */}
+        {!activeScoreEdit && (
+          <div className="controls-overlay">
+            <button className="btn-icon" onClick={() => handleZoom('in')} title="拡大">
+              <ZoomIn size={18} />
+            </button>
+            <button className="btn-icon" onClick={() => handleZoom('out')} title="縮小">
+              <ZoomOut size={18} />
+            </button>
+            <button className="btn-icon" onClick={() => handleZoom('reset')} title="ズームをリセット">
+              <RotateCcw size={18} />
+            </button>
 
-          <div style={{ width: 1, background: 'var(--border-color)', margin: '4px 0' }} />
-          <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0 4px', gap: 4 }}>
-            <HelpCircle size={12} />
-            <span>アイコンをタップしてスコア入力 / ドラッグで移動</span>
+            <div style={{ width: 1, background: 'var(--border-color)', margin: '4px 0' }} />
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0 4px', gap: 4 }}>
+              <HelpCircle size={12} />
+              <span>アイコンをタップしてスコア入力 / ドラッグで移動</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     )}
       </main>
