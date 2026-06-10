@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Plus, Trash2, ChevronLeft, ZoomIn, ZoomOut, 
   RotateCcw, Edit2, Move, Check, X, Save, Upload, Download,
-  Users, Edit3, HelpCircle, FileText
+  Users, Edit3, HelpCircle, FileText, Image
 } from 'lucide-react';
+import { toPng } from 'html-to-image';
 import {
   createTournament,
   setMatchScores,
@@ -53,6 +54,10 @@ function App() {
   // 一括編集モーダル用ステート
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [bulkTeamsText, setBulkTeamsText] = useState('');
+
+  // 画像エクスポート用ステート
+  const [isExportingImage, setIsExportingImage] = useState(false);
+  const bracketCaptureRef = useRef(null);
 
   // ローカルストレージからロード
   useEffect(() => {
@@ -401,6 +406,39 @@ function App() {
     downloadAnchor.remove();
   };
 
+  const handleImageExport = async () => {
+    if (!bracketCaptureRef.current) return;
+    setIsExportingImage(true);
+    try {
+      const dataUrl = await toPng(bracketCaptureRef.current, {
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          backgroundColor: '#f8fafc',
+        },
+        width: svgWidth,
+        height: svgHeight,
+        filter: (node) => {
+          if (node.classList) {
+            if (node.classList.contains('score-edit-trigger')) return false;
+            if (node.classList.contains('slot-actions')) return false;
+          }
+          return true;
+        }
+      });
+
+      const link = document.createElement('a');
+      link.download = `${currentTournament.name || 'tournament'}_bracket.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to export image:', err);
+      alert('画像の出力に失敗しました。詳細スコアなど一部の要素がレンダリングされていない可能性があります。');
+    } finally {
+      setIsExportingImage(false);
+    }
+  };
+
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -683,6 +721,9 @@ function App() {
               <button className="btn" onClick={handleExport}>
                 <Download size={18} /> エクスポート
               </button>
+              <button className="btn btn-primary" onClick={handleImageExport} disabled={isExportingImage}>
+                <Image size={18} /> {isExportingImage ? '画像出力中...' : '画像として保存'}
+              </button>
             </>
           )}
         </div>
@@ -888,6 +929,7 @@ function App() {
               }}
             >
               <div
+                ref={bracketCaptureRef}
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top left',
