@@ -592,14 +592,13 @@ function App() {
   const COL_WIDTH = 140;
   const ROW_HEIGHT = 64;
   const PAD_X = 220;
-  const PAD_Y = 100;
-
   const isBracketView = view === 'bracket' && currentTournament;
   const P = isBracketView ? currentTournament.teams.length : 8;
   const R = Math.log2(P);
   const N = isBracketView ? currentTournament.teamCount : 8;
   const layoutStyle = isBracketView ? (currentTournament.layoutStyle || 'single-sided') : 'single-sided';
   const isDoubleSided = layoutStyle === 'double-sided';
+  const PAD_Y = (isDoubleSided && N <= 8) ? 140 : 100;
   
   // 座標マップ
   const coords = isBracketView ? calculateLayoutCoords(currentTournament.rounds, currentTournament.teams, COL_WIDTH, ROW_HEIGHT, PAD_X, PAD_Y, layoutStyle) : {};
@@ -1374,7 +1373,7 @@ function App() {
                   const setsX = isFinalDoubleSided ? c.x : (c.isRight ? c.x + setsOffset : c.x - setsOffset);
                   const setsY = isFinalDoubleSided ? c.y + 18 : c.y;
                   const K = validSets.length;
-                  const bracketFontSize = K === 1 ? '16px' : K === 3 ? '26px' : '38px';
+                  const bracketFontSize = K === 1 ? '16px' : K <= 3 ? '38px' : '65px';
 
                   return (
                     <div
@@ -1418,7 +1417,7 @@ function App() {
                 const setsOffset = 65;
                 const setsX = isDoubleSided ? c.x : c.x - setsOffset;
                 const K = validSets.length;
-                const bracketFontSize = K === 1 ? '16px' : K === 3 ? '26px' : '38px';
+                const bracketFontSize = K === 1 ? '16px' : K <= 3 ? '38px' : '65px';
 
                 return (
                   <div

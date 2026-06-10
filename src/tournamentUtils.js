@@ -649,7 +649,7 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
     };
 
     let tpY;
-    if (R >= 3) {
+    if (R > 3) {
       const qfRound = R - 3;
       const qfMatch = Math.floor(rounds[qfRound].length / 2) - 1;
       const qfCoord = coords[`${qfRound}-${qfMatch}`];
@@ -659,7 +659,12 @@ export function calculateLayoutCoords(rounds, teams, colWidth = 180, rowHeight =
         tpY = finalsCoord.y + 120;
       }
     } else {
-      tpY = finalsCoord.y + 120;
+      const firstRoundMatch = coords[`0-${Math.floor(rounds[0].length / 2) - 1}`];
+      if (firstRoundMatch) {
+        tpY = firstRoundMatch.y + 90;
+      } else {
+        tpY = finalsCoord.y + 120;
+      }
     }
     coords['third-place'] = {
       x: finalsCoord.x,
