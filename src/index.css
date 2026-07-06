@@ -1,3 +1,7 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   /* ライトテーマ カラー定義 */
   --bg-main: #f1f5f9; /* 明るいグレーブルー */
@@ -192,6 +196,7 @@ body {
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ダッシュボード（保存済みリスト） */
