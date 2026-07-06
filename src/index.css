@@ -191,6 +191,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;
 }
 
 /* ダッシュボード（保存済みリスト） */
@@ -566,7 +567,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
   box-shadow: 0 2px 4px rgba(0,0,0,0.03);
@@ -635,7 +636,7 @@ body {
   background: #ffffff;
   border: 1px solid var(--accent-primary);
   color: var(--text-primary);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   padding: 2px 4px;
   border-radius: 4px;
@@ -675,7 +676,7 @@ body {
 }
 
 .champion-card-name {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
   max-width: 100%;

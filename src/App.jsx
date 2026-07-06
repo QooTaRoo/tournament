@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Plus, Trash2, ChevronLeft, ZoomIn, ZoomOut, 
   RotateCcw, Edit2, Move, Check, X, Save, Upload, Download,
-  Users, Edit3, HelpCircle, FileText, Image
+  Users, Edit3, FileText, Image
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import {
@@ -1787,12 +1787,6 @@ function App() {
             <button className="btn-icon" onClick={() => handleZoom('reset')} title="ズームをリセット">
               <RotateCcw size={18} />
             </button>
-
-            <div style={{ width: 1, background: 'var(--border-color)', margin: '4px 0' }} />
-            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0 4px', gap: 4 }}>
-              <HelpCircle size={12} />
-              <span>アイコンをタップしてスコア入力 / ドラッグで移動</span>
-            </div>
           </div>
         )}
       </div>
