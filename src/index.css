@@ -510,8 +510,13 @@ body {
   font-weight: 800;
   transform: translate(-50%, -50%);
   border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15);
   letter-spacing: 0.5px;
+}
+
+/* 画像エクスポート時のSafariレンダリングバグ（transformとbox-shadowのずれ）対策 */
+.exporting-image,
+.exporting-image * {
+  box-shadow: none !important;
 }
 
 /* 得点登録用フローティングアイコンボタン */

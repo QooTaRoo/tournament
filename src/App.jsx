@@ -423,8 +423,14 @@ function App() {
   const handleImageExport = async () => {
     if (!bracketCaptureRef.current) return;
     setIsExportingImage(true);
+    const captureEl = bracketCaptureRef.current;
+    captureEl.classList.add('exporting-image');
+
     try {
-      const blob = await toBlob(bracketCaptureRef.current, {
+      // スタイル適用をブラウザに反映させるための微小待機
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const blob = await toBlob(captureEl, {
         skipFonts: true,
         backgroundColor: '#f8fafc',
         style: {
@@ -502,6 +508,7 @@ function App() {
       console.error('Failed to export image:', err);
       alert('画像の出力に失敗しました。詳細スコアなど一部の要素がレンダリングされていない可能性があります。');
     } finally {
+      captureEl.classList.remove('exporting-image');
       setIsExportingImage(false);
     }
   };
