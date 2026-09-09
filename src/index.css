@@ -1278,3 +1278,132 @@ body {
   transition: color 0.2s;
 }
 
+/* トースト通知 */
+.toast-notification {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.toast-icon {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.toast-text {
+  white-space: nowrap;
+}
+
+.toast-action-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s;
+}
+
+.toast-action-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 50%;
+  transition: color 0.2s;
+}
+
+.toast-close:hover {
+  color: #f8fafc;
+}
+
+/* 画像プレビューモーダル */
+.preview-modal-content {
+  max-width: 90vw;
+  width: 800px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 12px;
+}
+
+.preview-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-modal-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.preview-instruction {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: #f1f5f9;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.preview-image-container {
+  flex: 1;
+  min-height: 200px;
+  max-height: 55vh;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12px;
+}
+
+.preview-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+

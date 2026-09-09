@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Plus, Trash2, ChevronLeft, ZoomIn, ZoomOut, 
   RotateCcw, Edit2, Move, Check, X, Save, Upload, Download,
-  Users, Edit3, FileText, Image
+  Users, Edit3, FileText, Image, CheckCircle, Eye
 } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { toBlob } from 'html-to-image';
 import {
   createTournament,
   setMatchScores,
@@ -58,6 +58,20 @@ function App() {
   // 画像エクスポート用ステート
   const [isExportingImage, setIsExportingImage] = useState(false);
   const bracketCaptureRef = useRef(null);
+  const [toastMessage, setToastMessage] = useState(null); // { text, previewData }
+  const toastTimeoutRef = useRef(null);
+  const previewUrlRef = useRef(null);
+  const [previewImageModal, setPreviewImageModal] = useState(null); // { url, fileName }
+
+  const showToast = (text, previewData = null) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToastMessage({ text, previewData });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 5000);
+  };
 
   // ローカルストレージからロード
   useEffect(() => {
@@ -410,7 +424,9 @@ function App() {
     if (!bracketCaptureRef.current) return;
     setIsExportingImage(true);
     try {
-      const dataUrl = await toPng(bracketCaptureRef.current, {
+      const blob = await toBlob(bracketCaptureRef.current, {
+        skipFonts: true,
+        backgroundColor: '#f8fafc',
         style: {
           transform: 'scale(1)',
           transformOrigin: 'top left',
@@ -429,10 +445,59 @@ function App() {
         }
       });
 
+      if (!blob) {
+        throw new Error('画像データの生成に失敗しました（Blobが空です）');
+      }
+
+      // ファイル名をサニタイズ（OSやブラウザで無効な文字を除外）
+      const safeName = (currentTournament.name || 'tournament')
+        .replace(/[/\\?%*:|"<>]/g, '_')
+        .trim() || 'tournament';
+      const fileName = `${safeName}.png`;
+
+      // 過去のプレビューURLがあれば解放
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+      const blobUrl = URL.createObjectURL(blob);
+      previewUrlRef.current = blobUrl;
+
+      // モバイル端末判定 (iOS / Android / iPadOS)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+
+      // モバイル環境かつWeb Share APIが利用可能な場合
+      if (isMobile && navigator.canShare) {
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          setIsExportingImage(false);
+          try {
+            await navigator.share({
+              files: [file],
+              title: currentTournament.name || 'トーナメント表',
+            });
+            showToast('画像を共有・保存しました', { url: blobUrl, fileName });
+            return;
+          } catch (shareErr) {
+            if (shareErr.name === 'AbortError') {
+              // キャンセル時はプレビューモーダルを表示して長押し保存できるように案内
+              setPreviewImageModal({ url: blobUrl, fileName });
+              return;
+            }
+            console.warn('Web Share API failed, falling back to download:', shareErr);
+          }
+        }
+      }
+
+      // デスクトップ環境またはWeb Share非対応環境でのダウンロード
       const link = document.createElement('a');
-      link.download = `${currentTournament.name || 'tournament'}.png`;
-      link.href = dataUrl;
+      link.download = fileName;
+      link.href = blobUrl;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+
+      showToast('トーナメント表の画像を保存しました', { url: blobUrl, fileName });
     } catch (err) {
       console.error('Failed to export image:', err);
       alert('画像の出力に失敗しました。詳細スコアなど一部の要素がレンダリングされていない可能性があります。');
@@ -1810,6 +1875,70 @@ function App() {
             <div className="modal-actions">
               <button className="btn" onClick={() => setIsBulkModalOpen(false)}>キャンセル</button>
               <button className="btn btn-primary" onClick={saveBulkNames}>保存する</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* トースト通知 */}
+      {toastMessage && (
+        <div className="toast-notification">
+          <CheckCircle size={18} className="toast-icon" />
+          <span className="toast-text">{toastMessage.text}</span>
+          {toastMessage.previewData && (
+            <button 
+              className="toast-action-btn"
+              onClick={() => setPreviewImageModal(toastMessage.previewData)}
+            >
+              <Eye size={14} /> プレビュー
+            </button>
+          )}
+          <button 
+            className="toast-close"
+            onClick={() => setToastMessage(null)}
+            title="閉じる"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* 画像プレビューモーダル */}
+      {previewImageModal && (
+        <div className="modal-overlay" onClick={() => setPreviewImageModal(null)}>
+          <div className="modal-content preview-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="preview-modal-header">
+              <h3>画像プレビュー</h3>
+              <button 
+                className="btn-icon" 
+                onClick={() => setPreviewImageModal(null)}
+                title="閉じる"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="preview-instruction">
+              スマートフォンをお使いの場合は、画像を長押しして「写真に追加」や「画像を保存」を選択できます。
+            </p>
+            <div className="preview-image-container">
+              <img 
+                src={previewImageModal.url} 
+                alt="トーナメント表プレビュー" 
+                className="preview-image"
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn" onClick={() => setPreviewImageModal(null)}>
+                閉じる
+              </button>
+              <a 
+                href={previewImageModal.url} 
+                download={previewImageModal.fileName}
+                className="btn btn-primary"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Download size={16} /> ダウンロード
+              </a>
             </div>
           </div>
         </div>
